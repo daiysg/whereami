@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TabHost
+        android:id="@android:id/tabhost"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical"
+            android:padding="5dp" >
+
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+            </TabWidget>
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:padding="5dp" >
+
+                <ScrollView
+                    android:id="@+id/tab_mylocation"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:scrollbars="vertical" >
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:orientation="vertical" >
+
+                        <Button
+                            android:id="@+id/buttonLocation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/buttonLocation" />
+
+                        <TextView
+                            android:id="@+id/textviewLocationTitle"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/textviewLocationTitle" />
+
+                        <TextView
+                            android:id="@+id/textviewLocation"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/textviewLocation" />
+
+                        <View
+                            android:layout_width="fill_parent"
+                            android:layout_height="2dip"
+                            android:background="#FF909090" />
+
+                        <TableLayout
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:shrinkColumns="0"
+                            android:stretchColumns="1" 
+                            >
+
+                   
+
+                            <TableRow>
+
+                                <TextView
+                                    android:id="@+id/textviewColumn11"
+                                    android:gravity="center" 
+                                     android:text="Building" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn22"
+                                    android:gravity="center" 
+                                    android:text="Location"/>
+
+                                <TextView
+                                    android:id="@+id/textviewColumn33"
+                                    android:gravity="center" 
+                                    android:text="Distance"/>
+                                
+                            </TableRow>
+
+                            <View
+                                android:layout_height="2dip"
+                                android:background="#FF909090" />
+
+                            <TableRow>
+
+                                <TextView
+                                    android:id="@+id/textviewColumnBuilding"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumnLocation"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumnDis"
+                                    android:gravity="center" />
+                            </TableRow>
+            <View
+                                android:layout_height="2dip"
+                                android:background="#FF909090" />
+                            <TableRow>
+
+                                <TextView
+                                    android:id="@+id/textviewColumn1"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn2"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn3"
+                                    android:gravity="center" />
+                            </TableRow>
+
+                            <View
+                                android:layout_height="2dip"
+                                android:background="#FF909090" />
+
+                            <TableRow>
+
+                                <TextView
+                                    android:id="@+id/textviewColumn1_1"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn2_1"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn3_1"
+                                    android:gravity="center" />
+                            </TableRow>
+
+                            <View
+                                android:layout_height="2dip"
+                                android:background="#FF909090" />
+
+                            <TableRow>
+
+                                <TextView
+                                    android:id="@+id/textviewColumn1_2"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn2_2"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:id="@+id/textviewColumn3_2"
+                                    android:gravity="center" />
+                            </TableRow>
+                        </TableLayout>
+                    </LinearLayout>
+                </ScrollView>
+
+                <ScrollView
+                    android:id="@+id/tab_googlemap"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:scrollbars="vertical" >
+
+                    <!--
+     			<com.google.android.maps.MapView 
+				android:id="@+id/mapview"
+				android:clickable="true"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent"
+				android:apiKey="0WHA06lDEPfMgAFfK8jL4oS5kk5UX4HBOsaqQbw"
+			/>
+                    -->
+                </ScrollView>
+
+                <ScrollView
+                    android:id="@+id/tab_floorplan"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:scrollbars="vertical" >
+
+                    <!-- <Button android:id="@+id/buttonFloorplan" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/buttonFloorplan"/> -->
+                </ScrollView>
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
+</LinearLayout>
