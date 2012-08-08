@@ -87,7 +87,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
         tabHost.addTab(spec);
         
         spec = tabHost.newTabSpec("Google Map");
-        spec.setIndicator("google map", res.getDrawable(android.R.drawable.ic_menu_compass));
+        spec.setIndicator("outdoor", res.getDrawable(android.R.drawable.ic_menu_compass));
         
         Context ctx = getApplicationContext();
         Intent i = new Intent(ctx, MapTabView.class);
@@ -96,7 +96,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
         tabHost.addTab(spec);
         
         spec = tabHost.newTabSpec("Floorplan");
-        spec.setIndicator("floorplan", res.getDrawable(android.R.drawable.ic_menu_directions));
+        spec.setIndicator("indoor", res.getDrawable(android.R.drawable.ic_menu_directions));
 //        spec.setContent(R.id.tab_floorplan);
         Intent i_floorplan = new Intent(ctx, FloorplanView.class);
         spec.setContent(i_floorplan);
@@ -240,6 +240,9 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
 					}
 				});
 				
+				//cannot use Toast directly in other thread
+				//Toast.makeText(getApplicationContext(), "Getting position", Toast.LENGTH_LONG);
+				
 				NUSGeoloc nusGeoloc = new NUSGeoloc();
 				Vector<String> mac = new Vector<String>(wifinus.size());
 				Vector<Double> strength = new Vector<Double>(wifinus.size());
@@ -263,6 +266,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
 							tv_location.setText("No location is available");
 						}
 					});
+					//cannot use Toast directly in other thread
+					//Toast.makeText(getApplicationContext(), "No location is available", Toast.LENGTH_LONG);
 				}else{
 					
 					apLocation = v_apLocation.firstElement();//choose the nearest location
@@ -275,7 +280,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
 						public void run() {
 							//						tv_location.setText(apLocation.toString());
 
-							//String text = "You are near the room of "+apLocation.getAp_location()+" in the building of "+apLocation.getBuilding()+"\n";
+							String text = "You are near "+apLocation.getAp_location()+" in the building of "+apLocation.getBuilding()+"\n";
 							//							String text = wifinus.get(0).level+" You are about: "+DfromCenter(wifinus.get(0).level)+" m from the room of "+apLocation.getAp_location()+" in the building of "+apLocation.getBuilding()+"\n";
 							//							tv_location.setText(text);
 							StringBuilder build=new StringBuilder();
@@ -317,8 +322,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements OnClickL
 							}
 								
 						
-							tv_location.setText("Dist between two APs:  "+String.valueOf(df.format(Distance)).replace(",",".")+"m "+check+"\nIntersection Pt:"+df.format(P3_latlon[0])+" "+df.format(P3_latlon[1])+" Radius: "+df.format(P3_inter[2]));	
-
+							//tv_location.setText("Dist between two APs:  "+String.valueOf(df.format(Distance)).replace(",",".")+"m "+check+"\nIntersection Pt:"+df.format(P3_latlon[0])+" "+df.format(P3_latlon[1])+" Radius: "+df.format(P3_inter[2]));	
+							tv_location.setText(text);
 							tv_building.setText(build);
 							tv_loc.setText(Loc);
 							tv_distance.setText(dist);
