@@ -66,48 +66,28 @@
                             android:layout_height="wrap_content"
                             android:shrinkColumns="0"
                             android:stretchColumns="1" 
-                            >
-
-                   
+                            >                   
 
                             <TableRow>
 
                                 <TextView
                                     android:id="@+id/textviewColumn11"
                                     android:gravity="center" 
-                                     android:text="Building" />
+                                     android:text="SSID" />
 
                                 <TextView
                                     android:id="@+id/textviewColumn22"
                                     android:gravity="center" 
-                                    android:text="Location"/>
+                                    android:text="MAC ADDR"/>
 
                                 <TextView
                                     android:id="@+id/textviewColumn33"
                                     android:gravity="center" 
-                                    android:text="Distance"/>
+                                    android:text="RSS"/>
                                 
                             </TableRow>
 
-                            <View
-                                android:layout_height="2dip"
-                                android:background="#FF909090" />
-
-                            <TableRow>
-
-                                <TextView
-                                    android:id="@+id/textviewColumnBuilding"
-                                    android:gravity="center" />
-
-                                <TextView
-                                    android:id="@+id/textviewColumnLocation"
-                                    android:gravity="center" />
-
-                                <TextView
-                                    android:id="@+id/textviewColumnDis"
-                                    android:gravity="center" />
-                            </TableRow>
-            <View
+            				<View
                                 android:layout_height="2dip"
                                 android:background="#FF909090" />
                             <TableRow>
@@ -171,16 +151,6 @@
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
                     android:scrollbars="vertical" >
-
-                    <!--
-     			<com.google.android.maps.MapView 
-				android:id="@+id/mapview"
-				android:clickable="true"
-				android:layout_width="fill_parent"
-				android:layout_height="fill_parent"
-				android:apiKey="0WHA06lDEPfMgAFfK8jL4oS5kk5UX4HBOsaqQbw"
-			/>
-                    -->
                 </ScrollView>
 
                 <ScrollView
@@ -188,8 +158,6 @@
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
                     android:scrollbars="vertical" >
-
-                    <!-- <Button android:id="@+id/buttonFloorplan" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/buttonFloorplan"/> -->
                 </ScrollView>
             </FrameLayout>
         </LinearLayout>

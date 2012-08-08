@@ -1,9 +1,11 @@
 package sg.edu.nus.ami.wifilocationApi;
 
+import java.lang.reflect.Type;
 import java.util.Vector;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * Create NUSGeoloc java API for AP based location web service
@@ -56,7 +58,8 @@ public class NUSGeoloc {
 			client.Execute(RequestMethod.GET);
 			String response = client.getResponse();
 			Gson gson = new GsonBuilder().serializeNulls().create();
-			apLocation = gson.fromJson(response, Vector.class);
+			Type T = new TypeToken<Vector<APLocation>>(){}.getType();
+			apLocation = gson.fromJson(response, T);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
