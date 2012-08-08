@@ -11,7 +11,7 @@
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"
   android:clickable="true"
-  android:apiKey="0WHA06lDEPfMgAFfK8jL4oS5kk5UX4HBOsaqQbw"  />
+  android:apiKey="0WHA06lDEPfPx2ILrAhQMkl2QWqnqctAz2SaO_g"  />
  
   <!-- qinfeng's debug apikey: android:apiKey="0WHA06lDEPfMgAFfK8jL4oS5kk5UX4HBOsaqQbw" -->
   <!-- qinfeng's production apikey: android:apiKey="0WHA06lDEPfPx2ILrAhQMkl2QWqnqctAz2SaO_g" -->
