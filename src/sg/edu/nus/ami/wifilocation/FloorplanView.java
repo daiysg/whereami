@@ -29,7 +29,8 @@ public class FloorplanView extends Activity {
 
 	MyImageView imageView;
 	Drawable floorplan;
-	String bdg_floor;
+//	String bdg_floor;
+	String APname;
 	BroadcastReceiver locationReceiver;
 	
 
@@ -53,16 +54,14 @@ public class FloorplanView extends Activity {
 					Gson gson = new GsonBuilder().serializeNulls().create();
 					APLocation apLocation = new APLocation();
 					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
-					String APname = apLocation.getAp_name();
-					String temp_bdg_floor = APname.substring(0, APname.indexOf("AP") - 1);
-					if(bdg_floor==null|| !temp_bdg_floor.equals(bdg_floor)){
-						bdg_floor = temp_bdg_floor;
-						Log.v(DEBUG_TAG, bdg_floor+" updated ");
-						
-						String[] _s = bdg_floor.split("[-]+");
-						Log.v(DEBUG_TAG, floorplan.toString());
-						floorplan = LoadImageFromWebOperations(getURL(_s[0], _s[1]));
-						Log.v(DEBUG_TAG, floorplan.toString());
+					String temp_APname = apLocation.getAp_name();
+//					String temp_bdg_floor = APname.substring(0, APname.indexOf("AP") - 1);
+					if(APname==null|| !temp_APname.equals(APname)){
+//						bdg_floor = temp_bdg_floor;
+						APname = temp_APname;
+//						
+//						String[] _s = bdg_floor.split("[-]+");
+						floorplan = LoadImageFromWebOperations(getURL(APname));
 						Handler h = new Handler();
 						h.post(new Runnable() {
 							
@@ -73,7 +72,6 @@ public class FloorplanView extends Activity {
 						
 					}else{
 						//do nothing	
-						Log.v(DEBUG_TAG, bdg_floor+" is the same");
 					}
 					
 					Log.v(DEBUG_TAG, "receive location service "+APname);
@@ -118,10 +116,14 @@ public class FloorplanView extends Activity {
 		return getResources().getDrawable(R.drawable.nofloormap);
 	}
 
-	public String getURL(String building, String floor) {
+	public String getURL(String apname) {
+		String bdg_floor = apname.substring(0, apname.indexOf("AP") - 1);
+		String[] _s = bdg_floor.split("[-]+");
+		String building = _s[0];
+		String floor = _s[1];
 
 		String url = "http://172.18.101.125:8080/geoserver/wms?"
-				+ "Layers=nus%3Afloors%2Cnus%3Arooms%2Cnus%3Alinks"
+				+ "Layers=nus%3Afloors%2Cnus%3Arooms%2Cnus%3Alinks%2Cnus%3Apois"
 				+ "&service=wms" + "&request=getmap" + "&format=image%2Fpng"
 				+ "&srs=EPSG%3A4326" + "&version=1.1.1";
 
@@ -131,6 +133,7 @@ public class FloorplanView extends Activity {
 			String filter = "building=%27" + building + "%27%20and%20floor=%27"
 					+ floor + "%27";
 
+			String filter_pois = "code=%27"+apname+"%27";
 			String bbox;
 			int width;
 			int height;
@@ -153,7 +156,7 @@ public class FloorplanView extends Activity {
 
 			url = url + "&width=" + String.valueOf(width) + "&height="
 					+ String.valueOf(height) + "&cql_filter=" + filter + "%3B"
-					+ filter + "%3B" + filter + "&bbox=" + bbox;
+					+ filter + "%3B" + filter + "%3B" + filter_pois +"&bbox=" + bbox;
 
 			Toast.makeText(
 					this,
