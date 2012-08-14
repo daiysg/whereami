@@ -65,13 +65,12 @@ public class NUSGeoloc {
 			client.Execute(RequestMethod.GET);
 			String response = client.getResponse();
 
-			// return an empty vector rather than null
+			//return an empty vector rather than null
 			if (response == null)
 				return apLocation;
 
 			Gson gson = new GsonBuilder().serializeNulls().create();
-			Type T = new TypeToken<Vector<APLocation>>() {
-			}.getType();
+			Type T = new TypeToken<Vector<APLocation>>(){}.getType();
 			apLocation = gson.fromJson(response, T);
 
 		} catch (Exception e) {
