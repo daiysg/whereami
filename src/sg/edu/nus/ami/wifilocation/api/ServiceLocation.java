@@ -188,10 +188,11 @@ public class ServiceLocation extends Service {
 					}
 				};
 
-				registerReceiver(receiver, new IntentFilter(
-						WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-				Log.v(TAG, "onCreate()");
 			}
+			
+			registerReceiver(receiver, new IntentFilter(
+					WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+			Log.v(TAG2, "run() in ServiceWorker in LocationService");
 
 		}
 	}
