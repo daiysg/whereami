@@ -1,4 +1,4 @@
-package sg.edu.nus.ami.wifilocationApi;
+package sg.edu.nus.ami.wifilocation.api;
 
 public enum RequestMethod
 {

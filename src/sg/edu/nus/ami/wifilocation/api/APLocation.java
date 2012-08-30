@@ -1,4 +1,4 @@
-package sg.edu.nus.ami.wifilocationApi;
+package sg.edu.nus.ami.wifilocation.api;
 
 /**
  * This is our location class for standard addressing the indoor location
