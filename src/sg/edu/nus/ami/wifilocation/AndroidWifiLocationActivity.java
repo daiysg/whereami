@@ -7,6 +7,8 @@ import java.util.Vector;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.NUSGeoloc;
+import sg.edu.nus.ami.wifilocation.api.RequestMethod;
+import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -17,7 +19,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -118,7 +124,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 		getPosHandler = new Handler();
 		apLocation = new APLocation();
-		
+
 		// register broadcast receiver
 		if (receiver == null) {
 			receiver = new BroadcastReceiver() {
@@ -185,6 +191,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		}// if
 
 		Log.v(DEBUG_TAG, "onCreate()");
+
+		checkUpdate(ctx);
 
 	}
 
@@ -256,7 +264,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		if (v.getId() == R.id.buttonLocation) {
 			Toast.makeText(this, "Scanning WIFI and searching location",
 					Toast.LENGTH_LONG).show();
-			 wifimgr.startScan();
+			wifimgr.startScan();
 
 		}
 	}
@@ -283,12 +291,12 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 				startService(ls_intent);
 				Log.v(DEBUG_TAG, "onResume(), start location service");
 			}
-		}		
-		
+		}
+
 		registerReceiver(receiver, new IntentFilter(
 				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 		Log.d(DEBUG_TAG,
-		"onResume(), create wifi broadcast receiver and register receiver");
+				"onResume(), create wifi broadcast receiver and register receiver");
 	}
 
 	private boolean isMyServiceRunning() {
@@ -333,4 +341,34 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		}
 	}
 
+	public void checkUpdate(Context context) {
+		try {
+			PackageManager pm = context.getPackageManager();
+			PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+			int currentVersionCode = pi.versionCode;			
+			
+			String str = "";
+			String url = "http://172.18.101.125/html/app/versioninfo.txt";
+			RestClient client = new RestClient(url);
+			client.Execute(RequestMethod.GET);
+			String response = client.getResponse();
+			if (response != null) {
+				String[] temp = response.split("[,\n]+");
+				str = temp[1];
+			}
+			
+			int latestVersionCode = Integer.valueOf(str);
+			
+			if (latestVersionCode > currentVersionCode) {
+				Intent updateIntent = new Intent(Intent.ACTION_VIEW,
+						Uri.parse("http://172.18.101.125/html/app/whereami.apk "));
+				startActivity(updateIntent);
+			}			
+			
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}		
+	}
 }
