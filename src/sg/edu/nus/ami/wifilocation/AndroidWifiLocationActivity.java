@@ -16,6 +16,7 @@ import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -28,6 +29,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -70,6 +72,10 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	Vector<ScanResult> wifinus = new Vector<ScanResult>();
 
 	SharedPreferences preferences;
+
+	// set dialog id
+	final int DIALOG_WIFI_ID = 1;
+	final int DIALOG_UPDATE_ID = 2;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -278,12 +284,9 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	public void onResume() {
 		super.onResume();
 		if (wifimgr.isWifiEnabled() == false) {
-			CreateAlertDialog dialog = new CreateAlertDialog();
-			AlertDialog alert = dialog.newdialog(this);
-			alert.show();
+			showDialog(1);
 		} else {
 			// start service
-			// TODO: need test where the service can be called
 			if (!isMyServiceRunning()) {
 				int counter = 1;
 				Intent ls_intent = new Intent(this, ServiceLocation.class);
@@ -341,12 +344,73 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		}
 	}
 
+	protected AlertDialog onCreateDialog(int id) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		AlertDialog dialog;
+		switch (id) {
+		case DIALOG_WIFI_ID:
+			builder.setMessage(
+					"This application requires a Wifi Connection to the NUS network. Please enable it in the Settings button.")
+					.setPositiveButton("Setting",
+							new DialogInterface.OnClickListener() {
+
+								public void onClick(DialogInterface dialog,
+										int which) {
+									Intent intent = new Intent(
+											Settings.ACTION_WIFI_SETTINGS);
+									startActivity(intent);
+
+								}
+							})
+					.setNegativeButton("Cancel",
+							new DialogInterface.OnClickListener() {
+
+								public void onClick(DialogInterface dialog,
+										int which) {
+									dialog.cancel();
+
+								}
+							});
+			dialog = builder.create();
+			break;
+		case DIALOG_UPDATE_ID:
+			builder.setMessage(
+					"There is a new version available. Do you want to update it?")
+					.setPositiveButton("Update",
+							new DialogInterface.OnClickListener() {
+
+								public void onClick(DialogInterface dialog,
+										int which) {
+									Intent updateIntent = new Intent(
+											Intent.ACTION_VIEW,
+											Uri.parse("http://172.18.101.125/html/app/whereami.apk "));
+									startActivity(updateIntent);
+
+								}
+							})
+					.setNegativeButton("Cancel",
+							new DialogInterface.OnClickListener() {
+
+								public void onClick(DialogInterface dialog,
+										int which) {
+									dialog.cancel();
+
+								}
+							});
+			dialog = builder.create();
+			break;
+		default:
+			dialog = null;
+		}
+		return dialog;
+	}
+
 	public void checkUpdate(Context context) {
 		try {
 			PackageManager pm = context.getPackageManager();
 			PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
-			int currentVersionCode = pi.versionCode;			
-			
+			int currentVersionCode = pi.versionCode;
+
 			String str = "";
 			String url = "http://172.18.101.125/html/app/versioninfo.txt";
 			RestClient client = new RestClient(url);
@@ -356,19 +420,17 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 				String[] temp = response.split("[,\n]+");
 				str = temp[1];
 			}
-			
+
 			int latestVersionCode = Integer.valueOf(str);
-			
+
 			if (latestVersionCode > currentVersionCode) {
-				Intent updateIntent = new Intent(Intent.ACTION_VIEW,
-						Uri.parse("http://172.18.101.125/html/app/whereami.apk "));
-				startActivity(updateIntent);
-			}			
-			
+				showDialog(2);
+			}
+
 		} catch (NameNotFoundException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}		
+		}
 	}
 }
