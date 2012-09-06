@@ -20,6 +20,7 @@ public class Splash extends Activity{
 				}finally{
 					Intent i = new Intent("sg.edu.nus.ami.wifilocation");
 					startActivity(i);
+					Splash.this.finish();
 					
 				}
 			}
