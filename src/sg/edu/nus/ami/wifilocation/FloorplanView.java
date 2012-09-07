@@ -16,14 +16,20 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/**
+ * This Activity is part of the whereami android application
+ * It is to show the floor map where the person is based on the WiFi location
+ * input: wifi label in term of I3-02-02
+ * output: floorplan of I3-02
+ * 
+ * @author qinfeng
+ *
+ */
 public class FloorplanView extends Activity {
 	private static final String DEBUG_TAG = "FloorplanView";
 
@@ -79,7 +85,7 @@ public class FloorplanView extends Activity {
 			};
 		}
 
-		floorplan = getResources().getDrawable(R.drawable.nofloormap);
+		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
 		imageView.setScaleType(ScaleType.MATRIX);
@@ -117,69 +123,16 @@ public class FloorplanView extends Activity {
 	}
 
 	public String getURL(String apname) {
-		String bdg_floor = apname.substring(0, apname.indexOf("AP") - 1);
-		String[] _s = bdg_floor.split("[-]+");
-		String building = _s[0];
-		String floor = _s[1];
-
-		String url = "http://172.18.101.125:8080/geoserver/wms?"
-				+ "Layers=nus%3Afloors%2Cnus%3Arooms%2Cnus%3Alinks%2Cnus%3Apois"
-				+ "&service=wms" + "&request=getmap" + "&format=image%2Fpng"
-				+ "&srs=EPSG%3A4326" + "&version=1.1.1";
-
-		// try to append more parameters to the URL
-		try {
-
-			String filter = "building=%27" + building + "%27%20and%20floor=%27"
-					+ floor + "%27";
-
-			String filter_pois = "code=%27"+apname+"%27";
-			String bbox;
-			int width;
-			int height;
-			int zoomlevel = 2;
-
-			// get bbox from webservice
-			// http://172.18.101.125:8080/api1/MapBbox?building=CCE
-			String bbox_url = "http://172.18.101.125:8080/api1/MapBbox";
-			RestClient client = new RestClient(bbox_url);
-			client.AddParam("building", building);
+		
+		try {		
+			String url = "http://172.18.101.125:8080/api/GeoserverURLGetter";
+			RestClient client = new RestClient(url);
+			client.AddParam("apname", apname);
 			client.Execute(RequestMethod.GET);
-
-			Bbox box = new Bbox();
-			Gson gson = new GsonBuilder().serializeNulls().create();
-			box = gson.fromJson(client.getResponse(), Bbox.class);
-			bbox = box.toString();
-
-			width = (int) ((box.maxX - box.minX) * 1000000) * zoomlevel;
-			height = (int) ((box.maxY - box.minY) * 1000000) * zoomlevel;
-
-			url = url + "&width=" + String.valueOf(width) + "&height="
-					+ String.valueOf(height) + "&cql_filter=" + filter + "%3B"
-					+ filter + "%3B" + filter + "%3B" + filter_pois +"&bbox=" + bbox;
-
-			Toast.makeText(
-					this,
-					"Loading Floor Plan : " + building + "-" + floor
-							+ "\nPlease Wait !", Toast.LENGTH_LONG).show();
-			Log.d("locationap ", building + "," + floor);
-		} catch (Exception e) {
+			return client.getResponse();
+		}catch (Exception e) {
 			e.printStackTrace();
-		}
-
-		return url;
-	}
-
-	public class Bbox {
-		double minX;
-		double minY;
-		double maxX;
-		double maxY;
-
-		public String toString() {
-			return String.valueOf(minX) + "," + String.valueOf(minY) + ","
-					+ String.valueOf(maxX) + "," + String.valueOf(maxY);
+			return null;
 		}
 	}
-
 }
