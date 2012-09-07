@@ -39,6 +39,9 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class AndroidWifiLocationActivity extends TabActivity implements
 		OnClickListener {
 	/** Called when the activity is first created. */
@@ -63,6 +66,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 	WifiManager wifimgr;
 	BroadcastReceiver receiver;
+	BroadcastReceiver locationReceiver;
+	
 	Handler getPosHandler;
 	APLocation apLocation;
 	Vector<APLocation> v_apLocation;
@@ -113,6 +118,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		bt_location.setOnClickListener(this);
 
 		tv_location = (TextView) findViewById(R.id.textviewLocation);
+		tv_location.setText("Getting location");
 		tv_ssid = (TextView) findViewById(R.id.textviewColumn1);
 		tv_bssid = (TextView) findViewById(R.id.textviewColumn2);
 		tv_level = (TextView) findViewById(R.id.textviewColumn3);
@@ -178,12 +184,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 					tv_bssid_1.setText(sb2_1);
 					tv_level_1.setText(sb3_1);
 
-					if (wifinus.size() > 0) {
-						new Thread(getPosRunnable).start();
-					}
-
-					// loop the wifi scan
-					// TODO: qinfeng to improve the delayed time
 					Handler handler = new Handler();
 					handler.postDelayed(new Runnable() {
 
@@ -195,76 +195,36 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			};
 
 		}// if
+		
+		if(locationReceiver == null){
+			locationReceiver = new BroadcastReceiver() {
+				
+				@Override
+				public void onReceive(Context context, Intent intent) {
+					// TODO Auto-generated method stub
+					String action = intent.getAction();
+					Bundle bundle = intent.getExtras();
+					Gson gson = new GsonBuilder().serializeNulls().create();
+					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
+					getPosHandler.post(new Runnable() {
+						public void run() {
+							String text = "You are near "
+									+ apLocation.getAp_location()
+									+ " in the building of "
+									+ apLocation.getBuilding() + "\n";
+
+							tv_location.setText(text);
+						}
+					});
+				}
+			};
+		}
 
 		Log.v(DEBUG_TAG, "onCreate()");
 
 		checkUpdate(ctx);
 
 	}
-
-	private Runnable getPosRunnable = new Runnable() {
-
-		public void run() {
-			getPosHandler.post(new Runnable() {
-				public void run() {
-					tv_location.setText("Getting position");
-				}
-			});
-
-			// cannot use Toast directly in other thread
-			// Toast.makeText(getApplicationContext(), "Getting position",
-			// Toast.LENGTH_LONG);
-
-			NUSGeoloc nusGeoloc = new NUSGeoloc();
-			Vector<String> mac = new Vector<String>(wifinus.size());
-			Vector<Double> strength = new Vector<Double>(wifinus.size());
-			v_apLocation = new Vector<APLocation>(wifinus.size());
-
-			for (ScanResult temp_wifi : wifinus) {
-				mac.add(temp_wifi.BSSID);
-				strength.add(Double.valueOf(temp_wifi.level));
-			}
-
-			v_apLocation = nusGeoloc.getLocationBasedOnAP(mac, strength);
-			if (v_apLocation.isEmpty()) {
-				getPosHandler.post(new Runnable() {
-
-					public void run() {
-						tv_location.setText("No location is available");
-					}
-				});
-			} else {
-				// choose the nearest location
-				apLocation = v_apLocation.firstElement();
-				// update main UI via handler
-				getPosHandler.post(new Runnable() {
-					public void run() {
-						String text = "You are near "
-								+ apLocation.getAp_location()
-								+ " in the building of "
-								+ apLocation.getBuilding() + "\n";
-
-						tv_location.setText(text);
-					}
-				});
-
-				SharedPreferences.Editor prefEditor = preferences.edit();
-				prefEditor.putString(BasicWifiLocation.LOCATION_BUILDING,
-						apLocation.getBuilding());
-				prefEditor.putString(BasicWifiLocation.LOCATION_ACCURACY,
-						String.valueOf(apLocation.getAccuracy()));
-				prefEditor.putString(BasicWifiLocation.LOCATION_AP_NAME,
-						apLocation.getAp_name());
-				prefEditor.putString(BasicWifiLocation.LOCATION_AP_LOCATION,
-						apLocation.getAp_location());
-				prefEditor.putString(BasicWifiLocation.LOCATION_AP_LAT,
-						String.valueOf(apLocation.getAp_lat()));
-				prefEditor.putString(BasicWifiLocation.LOCATION_AP_LONG,
-						String.valueOf(apLocation.getAp_long()));
-				prefEditor.commit();
-			}
-		}
-	};
 
 	public void onClick(View v) {
 		if (v.getId() == R.id.buttonLocation) {
@@ -298,8 +258,10 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 		registerReceiver(receiver, new IntentFilter(
 				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+		registerReceiver(locationReceiver, new IntentFilter(ServiceLocation.BROADCAST_ACTION));
 		Log.d(DEBUG_TAG,
-				"onResume(), create wifi broadcast receiver and register receiver");
+				"onResume(), create wifi broadcast receiver and register receiver\n" +
+				"and also create location service receiver and register receiver\n");
 	}
 
 	private boolean isMyServiceRunning() {
@@ -317,6 +279,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	@Override
 	public void onPause() {
 		unregisterReceiver(receiver);
+		unregisterReceiver(locationReceiver);
 		Log.d(DEBUG_TAG, "onPause(), unregisterReceiver");
 		super.onPause();
 	}
