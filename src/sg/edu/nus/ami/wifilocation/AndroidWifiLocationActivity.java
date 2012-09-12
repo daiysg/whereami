@@ -375,13 +375,19 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			int currentVersionCode = pi.versionCode;
 
 			String str = "";
+			String key = "whereami";
 			String url = "http://172.18.101.125/html/app/versioninfo.txt";
 			RestClient client = new RestClient(url);
 			client.Execute(RequestMethod.GET);
 			String response = client.getResponse();
 			if (response != null) {
 				String[] temp = response.split("[,\n]+");
-				str = temp[1];
+				for(int i = 0;i<temp.length;i++){
+					if(key.equals(temp[i])){
+						str = temp[i+1];
+						break;
+					}
+				}
 			}
 
 			int latestVersionCode = Integer.valueOf(str);
