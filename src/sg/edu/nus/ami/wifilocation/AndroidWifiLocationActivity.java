@@ -49,6 +49,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 	private static final String DEBUG_TAG = "AndroidWifiLocation";
 	private int m_defaultnetworkpreference;
+	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 
 	Button bt_location;
 
@@ -354,7 +355,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 										int which) {
 									Intent updateIntent = new Intent(
 											Intent.ACTION_VIEW,
-											Uri.parse("http://172.18.101.125/html/app/whereami.apk "));
+											Uri.parse(Baseurl+"/app/whereami.apk "));
 									startActivity(updateIntent);
 
 								}
@@ -384,7 +385,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 			String str = "";
 			String key = "whereami";
-			String url = "http://172.18.101.125/html/app/versioninfo.txt";
+			String url = Baseurl+"/app/versioninfo.txt";
 			RestClient client = new RestClient(url);
 			client.Execute(RequestMethod.GET);
 			String response = client.getResponse();

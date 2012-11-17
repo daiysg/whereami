@@ -32,6 +32,8 @@ import com.google.gson.GsonBuilder;
  */
 public class FloorplanView extends Activity {
 	private static final String DEBUG_TAG = "FloorplanView";
+	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
+
 
 	MyImageView imageView;
 	Drawable floorplan;
@@ -101,12 +103,14 @@ public class FloorplanView extends Activity {
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(ServiceLocation.BROADCAST_ACTION);
 		registerReceiver(locationReceiver, filter);
+		Log.d(DEBUG_TAG,"onResume, register locationrecevier");
 		
 	}
 	
 	public void onPause(){
 		super.onPause();
 		unregisterReceiver(locationReceiver);
+		Log.d(DEBUG_TAG,"onPause, unregister locationreceiver");
 	}
 
 	private Drawable LoadImageFromWebOperations(String url) {
@@ -125,7 +129,7 @@ public class FloorplanView extends Activity {
 	public String getURL(String apname) {
 		
 		try {		
-			String url = "http://172.18.101.125:8080/api/GeoserverURLGetter";
+			String url = Baseurl+"/api/api/GeoserverURLGetter";
 			RestClient client = new RestClient(url);
 			client.AddParam("apname", apname);
 			client.Execute(RequestMethod.GET);

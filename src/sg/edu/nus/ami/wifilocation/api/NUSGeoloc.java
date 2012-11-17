@@ -17,7 +17,7 @@ public class NUSGeoloc {
 	/**
 	 * A private String member URL directs to the AP based location web service
 	 */
-	private static final String url = "http://172.18.101.125:8080/api/AP";
+	private static final String url = "http://nuslivinglab.nus.edu.sg/api/api/AP";
 
 	/**
 	 * get the location based on the detected Access Point with the strongest
