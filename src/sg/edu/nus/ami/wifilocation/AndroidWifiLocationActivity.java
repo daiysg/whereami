@@ -416,9 +416,10 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		NetworkInfo mobile = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
 		//if 3g/4g available, change preference to 3g/4g
 		//else keep default preference to wifi
-		if(mobile.isAvailable()){
+		if(mobile.isConnectedOrConnecting()){
 			cm.setNetworkPreference(ConnectivityManager.TYPE_MOBILE);
 		}
+//		cm.setNetworkPreference(ConnectivityManager.TYPE_WIFI);
 		
 	}
 	
