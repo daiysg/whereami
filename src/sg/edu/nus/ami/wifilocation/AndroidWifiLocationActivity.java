@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Vector;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
-import sg.edu.nus.ami.wifilocation.api.NUSGeoloc;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
@@ -24,6 +23,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -47,6 +48,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	/** Called when the activity is first created. */
 
 	private static final String DEBUG_TAG = "AndroidWifiLocation";
+	private int m_defaultnetworkpreference;
 
 	Button bt_location;
 
@@ -67,6 +69,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	WifiManager wifimgr;
 	BroadcastReceiver receiver;
 	BroadcastReceiver locationReceiver;
+	ConnectivityManager cm;
 	
 	Handler getPosHandler;
 	APLocation apLocation;
@@ -133,6 +136,10 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 		// setup wifi
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		
+		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		m_defaultnetworkpreference = cm.getNetworkPreference();
+		changeNetworkPreference();
 
 		getPosHandler = new Handler();
 		apLocation = new APLocation();
@@ -244,7 +251,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	public void onResume() {
 		super.onResume();
 		if (wifimgr.isWifiEnabled() == false) {
-			showDialog(1);
+			showDialog(DIALOG_WIFI_ID);
 		} else {
 			// start service
 			if (!isMyServiceRunning()) {
@@ -295,6 +302,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		super.onDestroy();
 		Intent service = new Intent(this, ServiceLocation.class);
 		stopService(service);
+		restoreNetworkPreference();
 		Log.v(DEBUG_TAG, "onDestroy, stop service");
 		finish();
 	}
@@ -393,7 +401,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			int latestVersionCode = Integer.valueOf(str);
 
 			if (latestVersionCode > currentVersionCode) {
-				showDialog(2);
+				showDialog(DIALOG_UPDATE_ID);
 			}
 
 		} catch (NameNotFoundException e) {
@@ -401,5 +409,22 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void changeNetworkPreference(){
+		NetworkInfo mobile = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		//if 3g/4g available, change preference to 3g/4g
+		//else keep default preference to wifi
+		if(mobile.isAvailable()){
+			cm.setNetworkPreference(ConnectivityManager.TYPE_MOBILE);
+		}
+		
+	}
+	
+	public void restoreNetworkPreference(){
+		if(cm.getNetworkPreference() != m_defaultnetworkpreference){
+			cm.setNetworkPreference(m_defaultnetworkpreference);
+		}
+		
 	}
 }

@@ -183,6 +183,7 @@ public class ServiceLocation extends Service {
 
 							public void run() {
 								wifimgr.startScan();
+								Log.d(TAG, "loop wifi scan within location service");
 							}
 						}, 1000);
 					}
@@ -213,7 +214,7 @@ public class ServiceLocation extends Service {
 
 		// prevent user from clearing notification. Keep notification until we
 		// destroy it ourselves
-		notification.flags = Notification.FLAG_NO_CLEAR;
+//		notification.flags = Notification.FLAG_NO_CLEAR;
 		
 		/**
 		 * PendingIntent.getActivity : Retrieve a PendingIntent that will start a new activity, like calling Context.startActivity(Intent). 
