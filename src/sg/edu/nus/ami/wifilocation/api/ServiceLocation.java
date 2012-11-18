@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import sg.edu.nus.ami.wifilocation.AndroidWifiLocationActivity;
 import sg.edu.nus.ami.wifilocation.R;
+import sg.edu.nus.ami.wifilocation.Splash;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -224,7 +225,11 @@ public class ServiceLocation extends Service {
 		 * @params flags
 		 * 
 		 */
-		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this,AndroidWifiLocationActivity.class), 0);
+		Intent intent = new Intent(this,Splash.class);
+		intent.setAction("android.intent.action.MAIN");
+		intent.addCategory("android.intent.category.LAUNCHER");
+		
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		/**
 		 * Deprecated 
 		 * 
