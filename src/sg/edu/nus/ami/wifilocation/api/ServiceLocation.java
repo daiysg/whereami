@@ -201,7 +201,11 @@ public class ServiceLocation extends Service {
 
 	@Override
 	public void onDestroy() {
-		unregisterReceiver(receiver);
+		try{
+			unregisterReceiver(receiver);
+		}catch (IllegalArgumentException e) {
+			Log.e(TAG, "unregisterReceiver locationservice wifibroadcast receiver once more");
+		}
 
 		Toast.makeText(this, "ServiceLocation Done.", Toast.LENGTH_LONG).show();
 		myThreads.interrupt();
