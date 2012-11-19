@@ -40,7 +40,10 @@ public class ServiceLocation extends Service {
 	public static String BROADCAST_ACTION = "sg.edu.nus.ami.wifilocation.api.SHOW_LOCATION";
 
 	private static final String TAG = "ServiceLocation";
-
+	private final int WifiScanInterval = 3000; //scan wifi at least every 3 seconds, if doesnot receive a bcast
+												// within 3 seconds, start another wifi scan
+	long lastResultTimetamp = 0;
+	
 	private ThreadGroup myThreads;
 	private NotificationManager notifmgr;
 
@@ -67,6 +70,7 @@ public class ServiceLocation extends Service {
 				.show();
 		notifmgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		displayNotificationMessage("Background Service 'ServiceLocation' is running.");
+		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 	}
 
 	/**
@@ -89,6 +93,8 @@ public class ServiceLocation extends Service {
 		int counter = intent.getExtras().getInt("counter");
 		new Thread(myThreads, new ServiceWorker(counter), "ServiceLocation")
 				.start();
+		
+		wifiscantimer.run();
 
 		return START_STICKY;
 	}
@@ -111,7 +117,6 @@ public class ServiceLocation extends Service {
 			wifinus = new Vector<ScanResult>();
 			apLocation = new APLocation();
 			geoloc = new Geoloc();
-			wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
 			if (wifimgr.isWifiEnabled() == false) {
 				wifimgr.setWifiEnabled(true);
@@ -183,14 +188,11 @@ public class ServiceLocation extends Service {
 							}
 						}
 
-						Handler handler = new Handler();
-						handler.postDelayed(new Runnable() {
 
-							public void run() {
-								wifimgr.startScan();
-								Log.d(TAG, "loop wifi scan within location service");
-							}
-						}, 1000);
+						lastResultTimetamp = System.currentTimeMillis();
+						wifimgr.startScan();
+						Log.d(TAG, "loop wifi scan within location service, scan wifi at "+lastResultTimetamp);
+
 					}
 				};
 
@@ -202,6 +204,21 @@ public class ServiceLocation extends Service {
 
 		}
 	}
+	
+	Runnable wifiscantimer = new Runnable() {
+		
+		public void run() {
+			// TODO Auto-generated method stub
+			if(System.currentTimeMillis()-lastResultTimetamp>WifiScanInterval){
+				wifimgr.startScan();
+				Log.i(TAG,"wifi scan started by timer");
+			}
+			Handler h = new Handler();
+			h.postDelayed(wifiscantimer, 1000);
+			Log.i(TAG, "here is wifi timer");
+			
+		}
+	};
 
 	@Override
 	public void onDestroy() {
