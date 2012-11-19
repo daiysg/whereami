@@ -18,6 +18,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -45,6 +46,7 @@ public class ServiceLocation extends Service {
 
 	WifiManager wifimgr;
 	BroadcastReceiver receiver;
+	WifiLock wifiLock;
 
 	Handler getPosHandler;
 	APLocation apLocation;
@@ -114,6 +116,8 @@ public class ServiceLocation extends Service {
 			if (wifimgr.isWifiEnabled() == false) {
 				wifimgr.setWifiEnabled(true);
 			}
+			
+			acquireWifiLock();
 
 			wifimgr.startScan();
 			Log.v(TAG2, "WIFI SCANNING! ");
@@ -203,6 +207,7 @@ public class ServiceLocation extends Service {
 	public void onDestroy() {
 		try{
 			unregisterReceiver(receiver);
+			releaseWifiLock();
 		}catch (IllegalArgumentException e) {
 			Log.e(TAG, "unregisterReceiver locationservice wifibroadcast receiver once more");
 		}
@@ -245,6 +250,22 @@ public class ServiceLocation extends Service {
 		notification.setLatestEventInfo(this, TAG, message, contentIntent);
 		
 		notifmgr.notify(0, notification);
+	}
+	
+	private void acquireWifiLock(){
+		wifiLock = wifimgr.createWifiLock(WifiManager.WIFI_MODE_SCAN_ONLY, ServiceLocation.class.getName());
+		wifiLock.setReferenceCounted(false);
+		wifiLock.acquire();
+		
+	}
+	
+	private void releaseWifiLock(){
+		if(wifiLock != null){
+			if(wifiLock.isHeld()){
+				wifiLock.release();
+			}
+			wifiLock = null;
+		}
 	}
 	
 	public class CmpScan implements Comparator<ScanResult> {
