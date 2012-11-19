@@ -386,7 +386,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
 			int currentVersionCode = pi.versionCode;
 
-			String str = "";
+			String str = "0";
 			String key = "whereami";
 			String url = Baseurl+"/app/versioninfo.txt";
 			RestClient client = new RestClient(url);
