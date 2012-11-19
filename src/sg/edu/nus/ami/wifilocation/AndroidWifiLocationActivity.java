@@ -50,6 +50,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	private static final String DEBUG_TAG = "AndroidWifiLocation";
 	private int m_defaultnetworkpreference;
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
+	
+	private boolean shouldturnoffwifi = false;
 
 	Button bt_location;
 
@@ -304,6 +306,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		Intent service = new Intent(this, ServiceLocation.class);
 		stopService(service);
 		restoreNetworkPreference();
+		if(shouldturnoffwifi)
+			wifimgr.setWifiEnabled(false);
 		Log.v(DEBUG_TAG, "onDestroy, stop service");
 		finish();
 	}
@@ -322,15 +326,14 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		switch (id) {
 		case DIALOG_WIFI_ID:
 			builder.setMessage(
-					"This application requires a Wifi Connection to the NUS network. Please enable it in the Settings button.")
-					.setPositiveButton("Setting",
+					"This application requires Wifi, please allow me to turn on wifi, the wifi will be turned off when you exit this app.")
+					.setPositiveButton("Allow",
 							new DialogInterface.OnClickListener() {
 
 								public void onClick(DialogInterface dialog,
 										int which) {
-									Intent intent = new Intent(
-											Settings.ACTION_WIFI_SETTINGS);
-									startActivity(intent);
+									shouldturnoffwifi = true;
+									wifimgr.setWifiEnabled(true);
 
 								}
 							})
