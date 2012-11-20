@@ -1,6 +1,7 @@
 package sg.edu.nus.ami.wifilocation;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
@@ -12,10 +13,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 
 import com.google.gson.Gson;
@@ -37,6 +42,7 @@ public class FloorplanView extends Activity {
 
 	MyImageView imageView;
 	Drawable floorplan;
+	Bitmap bm_floorplan;
 //	String bdg_floor;
 	String APname;
 	BroadcastReceiver locationReceiver;
@@ -67,16 +73,9 @@ public class FloorplanView extends Activity {
 					if(APname==null|| !temp_APname.equals(APname)){
 //						bdg_floor = temp_bdg_floor;
 						APname = temp_APname;
-//						
-//						String[] _s = bdg_floor.split("[-]+");
-						floorplan = LoadImageFromWebOperations(getURL(APname));
-						Handler h = new Handler();
-						h.post(new Runnable() {
-							
-							public void run() {
-								imageView.setImageDrawable(floorplan);								
-							}
-						});
+						
+						//TODO: start an asynctask to update the imageview
+						new BitmapWorkerTask(imageView).execute(getURL(APname));
 						
 					}else{
 						//do nothing	
@@ -138,5 +137,61 @@ public class FloorplanView extends Activity {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	//decodes image and scales it to reduce memory consumption
+	private Bitmap decodeInputStream(String url){
+	    try {
+	    	InputStream is = (InputStream) new URL(url).getContent();
+	        //Decode image size
+	        BitmapFactory.Options o = new BitmapFactory.Options();
+	        o.inJustDecodeBounds = true;
+	        BitmapFactory.decodeStream(is, null, o);
+
+	        //The new size we want to scale to
+	        final int REQUIRED_SIZE=700;
+
+	        //Find the correct scale value. It should be the power of 2.
+	        int scale=1;
+	        while(o.outWidth/scale/2>=REQUIRED_SIZE && o.outHeight/scale/2>=REQUIRED_SIZE)
+	            scale*=2;
+
+	        //Decode with inSampleSize
+	        BitmapFactory.Options o2 = new BitmapFactory.Options();
+	        o2.inSampleSize=scale;
+	        InputStream is1 = (InputStream) new URL(url).getContent();
+	        return BitmapFactory.decodeStream(is1, null, o2);
+	    } catch (Exception e) {}
+	    return BitmapFactory.decodeResource(getResources(), R.drawable.nofloormap);
+	}
+	
+	class BitmapWorkerTask extends AsyncTask<String, Integer, Bitmap> {
+	    private final WeakReference<ImageView> imageViewReference;
+	    private int data = 0;
+
+	    public BitmapWorkerTask(ImageView imageView) {
+	        // Use a WeakReference to ensure the ImageView can be garbage collected
+	        imageViewReference = new WeakReference<ImageView>(imageView);
+	    }
+
+	    // Decode image in background.
+	    protected Bitmap doInBackground(String... params) {
+	        return decodeInputStream(params[0]);
+	    }
+	    
+	    protected void onProgressUpdate(Integer progress){
+	    	setProgress(progress);
+	    }
+
+	    // Once complete, see if ImageView is still around and set bitmap.
+	    @Override
+	    protected void onPostExecute(Bitmap bitmap) {
+	        if (imageViewReference != null && bitmap != null) {
+	            final ImageView imageView = imageViewReference.get();
+	            if (imageView != null) {
+	                imageView.setImageBitmap(bitmap);
+	            }
+	        }
+	    }
 	}
 }
