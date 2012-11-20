@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
-import sg.edu.nus.ami.wifilocation.AndroidWifiLocationActivity;
 import sg.edu.nus.ami.wifilocation.R;
 import sg.edu.nus.ami.wifilocation.Splash;
 import android.app.Notification;
@@ -40,7 +39,7 @@ public class ServiceLocation extends Service {
 	public static String BROADCAST_ACTION = "sg.edu.nus.ami.wifilocation.api.SHOW_LOCATION";
 
 	private static final String TAG = "ServiceLocation";
-	private final int WifiScanInterval = 3000; //scan wifi at least every 3 seconds, if doesnot receive a bcast
+	private final int WifiScanInterval = 6000; //scan wifi at least every 3 seconds, if doesnot receive a bcast
 												// within 3 seconds, start another wifi scan
 	long lastResultTimetamp = 0;
 	
@@ -58,12 +57,19 @@ public class ServiceLocation extends Service {
 
 	Vector<ScanResult> wifinus;
 	Vector<APLocation> v_apLocation;
+	
+	Handler h_wifiscantimer;
+	Thread t_wifiscantimer;
+	boolean b_wifiscantimer_continue = true;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
 		myThreads = new ThreadGroup("ServiceWorker");
+		
+		h_wifiscantimer = new Handler();
+		t_wifiscantimer = new Thread(wifiscantimer);
 
 
 		Toast.makeText(this, "ServiceLocation CREATED", Toast.LENGTH_SHORT)
@@ -90,11 +96,13 @@ public class ServiceLocation extends Service {
 				.show();
 
 		// DO SOMETHING
-		int counter = intent.getExtras().getInt("counter");
+//		int counter = intent.getExtras().getInt("counter");
+		int counter = 0;
 		new Thread(myThreads, new ServiceWorker(counter), "ServiceLocation")
 				.start();
 		
-		wifiscantimer.run();
+		t_wifiscantimer.start();
+		Log.i(TAG, "wifiscantimer thread started, thread id:  "+ t_wifiscantimer.getId());
 
 		return START_STICKY;
 	}
@@ -138,19 +146,19 @@ public class ServiceLocation extends Service {
 						wifinus.removeAllElements();
 
 						List<ScanResult> wifilist = wifimgr.getScanResults();
-						Collections.sort(wifilist, new CmpScan());
+						if (wifilist!=null) {
+							Collections.sort(wifilist, new CmpScan());
+							for (ScanResult wifipoint : wifilist) {
 
-						for (ScanResult wifipoint : wifilist) {
+								if (wifipoint.SSID.equals("NUS")
+										|| wifipoint.SSID.equals("NUSOPEN")) {
+									wifinus.add(wifipoint);
 
-							if (wifipoint.SSID.equals("NUS")
-									|| wifipoint.SSID.equals("NUSOPEN")) {
-								wifinus.add(wifipoint);
-
-								Log.v(TAG2, "wifi_point = "
-										+ wifipoint.SSID);
+									Log.v(TAG2, "wifi_point = "
+											+ wifipoint.SSID);
+								}
 							}
 						}
-						
 						if (wifinus.size() > 0) {
 
 							NUSGeoloc nusGeoloc = new NUSGeoloc();
@@ -190,7 +198,12 @@ public class ServiceLocation extends Service {
 
 
 						lastResultTimetamp = System.currentTimeMillis();
-						wifimgr.startScan();
+						boolean startedsuccessfully = wifimgr.startScan();
+						if(startedsuccessfully){
+							Log.i(TAG, "wifi scan started successfully");
+						}else{
+							Log.e(TAG, "wifi scan failed");
+						}
 						Log.d(TAG, "loop wifi scan within location service, scan wifi at "+lastResultTimetamp);
 
 					}
@@ -210,13 +223,18 @@ public class ServiceLocation extends Service {
 		public void run() {
 			// TODO Auto-generated method stub
 			if(System.currentTimeMillis()-lastResultTimetamp>WifiScanInterval){
-				wifimgr.startScan();
+				boolean startedsuccessfully = wifimgr.startScan();
+				if(startedsuccessfully){
+					Log.i(TAG, "wifi scan started successfully");
+				}else{
+					Log.e(TAG, "wifi scan failed");
+				}
 				Log.i(TAG,"wifi scan started by timer");
 			}
-			Handler h = new Handler();
-			h.postDelayed(wifiscantimer, 1000);
-			Log.i(TAG, "here is wifi timer");
-			
+			if(b_wifiscantimer_continue){
+				h_wifiscantimer.postDelayed(wifiscantimer, 3000);
+				Log.i(TAG, "here is wifi timer, thread id: "+Thread.currentThread().getId());
+			}
 		}
 	};
 
@@ -231,6 +249,8 @@ public class ServiceLocation extends Service {
 
 		Toast.makeText(this, "ServiceLocation Done.", Toast.LENGTH_LONG).show();
 		myThreads.interrupt();
+		b_wifiscantimer_continue = false;
+		Log.i(TAG,"onDestroy, set wifiscantimer_continue flag to false");
 		notifmgr.cancelAll();
 
 	}
