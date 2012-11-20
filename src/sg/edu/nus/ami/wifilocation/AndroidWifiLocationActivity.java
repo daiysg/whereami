@@ -168,20 +168,24 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 					List<ScanResult> wifilist = wifimgr.getScanResults();
 
-					Collections.sort(wifilist, new CmpScan());
-
-					for (ScanResult wifipoint : wifilist) {
-						sb1.append(wifipoint.SSID + "\n");
-						sb2.append(wifipoint.BSSID + "\n");
-						sb3.append(wifipoint.level + "\n");
-
-						if (wifipoint.SSID.equals("NUS")
-								|| wifipoint.SSID.equals("NUSOPEN")) {
-							wifinus.add(wifipoint);
-							sb1_1.append(wifipoint.SSID + "\n");
-							sb2_1.append(wifipoint.BSSID + "\n");
-							sb3_1.append(wifipoint.level + "\n");
+					if(wifilist != null)
+					{
+						Collections.sort(wifilist, new CmpScan());
+						
+						for (ScanResult wifipoint : wifilist) {
+							sb1.append(wifipoint.SSID + "\n");
+							sb2.append(wifipoint.BSSID + "\n");
+							sb3.append(wifipoint.level + "\n");
+							
+							if (wifipoint.SSID.equals("NUS")
+									|| wifipoint.SSID.equals("NUSOPEN")) {
+								wifinus.add(wifipoint);
+								sb1_1.append(wifipoint.SSID + "\n");
+								sb2_1.append(wifipoint.BSSID + "\n");
+								sb3_1.append(wifipoint.level + "\n");
+							}
 						}
+						
 					}
 
 					// non nus point
@@ -194,13 +198,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 					tv_bssid_1.setText(sb2_1);
 					tv_level_1.setText(sb3_1);
 
-					Handler handler = new Handler();
-					handler.postDelayed(new Runnable() {
-
-						public void run() {
-							wifimgr.startScan();
-						}
-					}, 2000);
 				}
 			};
 
@@ -255,16 +252,16 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		super.onResume();
 		if (wifimgr.isWifiEnabled() == false) {
 			showDialog(DIALOG_WIFI_ID);
-		} else {
-			// start service
-			if (!isMyServiceRunning()) {
-				int counter = 1;
-				Intent ls_intent = new Intent(this, ServiceLocation.class);
-				ls_intent.putExtra("counter", counter++);
-				startService(ls_intent);
-				Log.v(DEBUG_TAG, "onResume(), start location service");
-			}
+		} 
+		// start service
+		if (!isMyServiceRunning()) {
+			int counter = 1;
+			Intent ls_intent = new Intent(this, ServiceLocation.class);
+			ls_intent.putExtra("counter", counter++);
+			startService(ls_intent);
+			Log.v(DEBUG_TAG, "onResume(), start location service");
 		}
+	
 
 		registerReceiver(receiver, new IntentFilter(
 				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
