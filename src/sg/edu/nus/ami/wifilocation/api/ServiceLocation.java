@@ -132,8 +132,7 @@ public class ServiceLocation extends Service {
 			
 			acquireWifiLock();
 
-			wifimgr.startScan();
-			Log.v(TAG2, "WIFI SCANNING! ");
+			startWifiScan();
 
 			if (receiver == null) {
 				receiver = new BroadcastReceiver() {
@@ -198,12 +197,7 @@ public class ServiceLocation extends Service {
 
 
 						lastResultTimetamp = System.currentTimeMillis();
-						boolean startedsuccessfully = wifimgr.startScan();
-						if(startedsuccessfully){
-							Log.i(TAG, "wifi scan started successfully");
-						}else{
-							Log.e(TAG, "wifi scan failed");
-						}
+						startWifiScan();
 						Log.d(TAG, "loop wifi scan within location service, scan wifi at "+lastResultTimetamp);
 
 					}
@@ -223,12 +217,7 @@ public class ServiceLocation extends Service {
 		public void run() {
 			// TODO Auto-generated method stub
 			if(System.currentTimeMillis()-lastResultTimetamp>WifiScanInterval){
-				boolean startedsuccessfully = wifimgr.startScan();
-				if(startedsuccessfully){
-					Log.i(TAG, "wifi scan started successfully");
-				}else{
-					Log.e(TAG, "wifi scan failed");
-				}
+				startWifiScan();
 				Log.i(TAG,"wifi scan started by timer");
 			}
 			if(b_wifiscantimer_continue){
@@ -253,6 +242,20 @@ public class ServiceLocation extends Service {
 		Log.i(TAG,"onDestroy, set wifiscantimer_continue flag to false");
 		notifmgr.cancelAll();
 
+	}
+	
+	/**
+	 * this method is to tweak the wifiscan
+	 * check wifi state
+	 * 
+	 */
+	public void startWifiScan(){
+		boolean startedsuccessfully = wifimgr.startScan();
+		if(startedsuccessfully){
+			Log.i(TAG, "wifi scan started successfully");
+		}else{
+			Log.e(TAG, "wifi scan failed");
+		}
 	}
 
 	private void displayNotificationMessage(String message) {
