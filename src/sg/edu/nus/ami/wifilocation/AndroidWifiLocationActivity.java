@@ -428,5 +428,9 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			cm.setNetworkPreference(m_defaultnetworkpreference);
 		}
 		
+		//some time there app crash, it does not restore the networkpreference,
+		//force the network preference to wifi, which is the default
+		cm.setNetworkPreference(ConnectivityManager.TYPE_WIFI);
+		
 	}
 }
