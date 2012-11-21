@@ -15,6 +15,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
@@ -49,6 +51,8 @@ public class ServiceLocation extends Service {
 	WifiManager wifimgr;
 	BroadcastReceiver receiver;
 	WifiLock wifiLock;
+	ConnectivityManager cm;
+	NetworkInfo wifiInfo;
 
 	Handler getPosHandler;
 	APLocation apLocation;
@@ -77,6 +81,7 @@ public class ServiceLocation extends Service {
 		notifmgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		displayNotificationMessage("Background Service 'ServiceLocation' is running.");
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 
 	/**
@@ -221,7 +226,9 @@ public class ServiceLocation extends Service {
 				Log.i(TAG,"wifi scan started by timer");
 			}
 			if(b_wifiscantimer_continue){
-				h_wifiscantimer.postDelayed(wifiscantimer, 3000);
+				wifiInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+				Log.i(TAG, wifiInfo.getDetailedState().toString());
+				h_wifiscantimer.postDelayed(wifiscantimer, 1000);
 				Log.i(TAG, "here is wifi timer, thread id: "+Thread.currentThread().getId());
 			}
 		}
@@ -246,10 +253,13 @@ public class ServiceLocation extends Service {
 	
 	/**
 	 * this method is to tweak the wifiscan
-	 * check wifi state
+	 * check wifi state before start wifi scan
 	 * 
 	 */
 	public void startWifiScan(){
+//		wifiInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+//		Log.i(TAG, wifiInfo.getDetailedState().toString());
+		
 		boolean startedsuccessfully = wifimgr.startScan();
 		if(startedsuccessfully){
 			Log.i(TAG, "wifi scan started successfully");
