@@ -51,8 +51,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	private int m_defaultnetworkpreference;
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 	
-	private boolean shouldturnoffwifi = false;
-
 	Button bt_location;
 
 	TextView tv_location;
@@ -303,8 +301,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		Intent service = new Intent(this, ServiceLocation.class);
 		stopService(service);
 		restoreNetworkPreference();
-		if(shouldturnoffwifi)
-			wifimgr.setWifiEnabled(false);
 		Log.v(DEBUG_TAG, "onDestroy, stop service");
 		finish();
 	}
@@ -329,8 +325,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 								public void onClick(DialogInterface dialog,
 										int which) {
-									shouldturnoffwifi = true;
-									wifimgr.setWifiEnabled(true);
+									//so far do nothing
 
 								}
 							})
