@@ -18,6 +18,8 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
@@ -53,6 +55,8 @@ public class ServiceLocation extends Service {
 	WifiLock wifiLock;
 	ConnectivityManager cm;
 	NetworkInfo wifiInfo;
+	WifiInfo _wifiInfo;
+	Vector<Integer> v_configuredNetID;
 
 	Handler getPosHandler;
 	APLocation apLocation;
@@ -65,6 +69,7 @@ public class ServiceLocation extends Service {
 	Handler h_wifiscantimer;
 	Thread t_wifiscantimer;
 	boolean b_wifiscantimer_continue = true;
+	private boolean shouldturnoffwifi = false;
 
 	@Override
 	public void onCreate() {
@@ -82,6 +87,7 @@ public class ServiceLocation extends Service {
 		displayNotificationMessage("Background Service 'ServiceLocation' is running.");
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		v_configuredNetID = new Vector<Integer>();
 	}
 
 	/**
@@ -133,10 +139,13 @@ public class ServiceLocation extends Service {
 
 			if (wifimgr.isWifiEnabled() == false) {
 				wifimgr.setWifiEnabled(true);
+				shouldturnoffwifi = true;
 			}
 			
 			acquireWifiLock();
-
+			//disable wifi when mobile is available and connecting
+			if(cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).isConnectedOrConnecting())
+				disableConfiguredNetwork();
 			startWifiScan();
 
 			if (receiver == null) {
@@ -227,7 +236,9 @@ public class ServiceLocation extends Service {
 			}
 			if(b_wifiscantimer_continue){
 				wifiInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-				Log.i(TAG, wifiInfo.getDetailedState().toString());
+				_wifiInfo = wifimgr.getConnectionInfo();
+				Log.i(TAG, wifiInfo.getDetailedState().toString()+" wifimgr wifi info: "+_wifiInfo.getSupplicantState().toString()+
+						"ip: "+_wifiInfo.getIpAddress());
 				h_wifiscantimer.postDelayed(wifiscantimer, 1000);
 				Log.i(TAG, "here is wifi timer, thread id: "+Thread.currentThread().getId());
 			}
@@ -238,11 +249,14 @@ public class ServiceLocation extends Service {
 	public void onDestroy() {
 		try{
 			unregisterReceiver(receiver);
-			releaseWifiLock();
 		}catch (IllegalArgumentException e) {
 			Log.e(TAG, "unregisterReceiver locationservice wifibroadcast receiver once more");
 		}
 
+		releaseWifiLock();
+		restoreConfiguredNetwork();
+		if(shouldturnoffwifi)
+			wifimgr.setWifiEnabled(false);
 		Toast.makeText(this, "ServiceLocation Done.", Toast.LENGTH_LONG).show();
 		myThreads.interrupt();
 		b_wifiscantimer_continue = false;
@@ -266,6 +280,83 @@ public class ServiceLocation extends Service {
 		}else{
 			Log.e(TAG, "wifi scan failed");
 		}
+	}
+	
+	/**
+	 * this method is to disable user configured network so that the phone will not
+	 * auto connect to wifi
+	 */
+	public void disableConfiguredNetwork(){
+		//first print out a list of configured network with the configure state:
+		//disabled, enabled, current
+		int state = wifimgr.getWifiState();
+		if(state == WifiManager.WIFI_STATE_ENABLED){
+			runDisableConfiguredNetwork();
+		}else if(state == WifiManager.WIFI_STATE_ENABLING || state == WifiManager.WIFI_STATE_DISABLING){
+			registerReceiver(new BroadcastReceiver() {
+				
+				@Override
+				public void onReceive(Context context, Intent intent) {
+					// TODO Auto-generated method stub
+					if(WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())){
+						try{
+							unregisterReceiver(this);
+							disableConfiguredNetwork();
+						}catch(IllegalArgumentException e){
+							Log.e(TAG, "unregister receiver more than once");
+						}
+					}
+					
+				}
+			}, new IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION));
+		}else{
+			//no thing else
+		}
+		
+	}
+	
+	public void runDisableConfiguredNetwork(){
+		List<WifiConfiguration> l_wificonf = wifimgr.getConfiguredNetworks();
+		String s = "";
+		for(WifiConfiguration wificonf : l_wificonf){
+			s+="NetID: "+wificonf.networkId+"| BSSID: "+wificonf.BSSID + "| SSID: "+wificonf.SSID+"| State: "+wificonf.status+"\n";
+			
+		}
+		Log.i(TAG,"disable network:"+s);
+		
+		
+		for(WifiConfiguration wificonf : l_wificonf){
+			if(WifiConfiguration.Status.DISABLED != wificonf.status){
+				wifimgr.disableNetwork(wificonf.networkId);
+				v_configuredNetID.add(wificonf.networkId);
+				Log.i(TAG, "disable net id: "+wificonf.networkId);
+			}			
+		}
+		
+		s="";
+		for(WifiConfiguration wificonf : l_wificonf){
+			s+="NetID: "+wificonf.networkId+"| BSSID: "+wificonf.BSSID + "| SSID: "+wificonf.SSID+"| State: "+wificonf.status+"\n";
+			
+		}
+		Log.i(TAG,s);
+		
+	}
+	
+	public void restoreConfiguredNetwork(){
+		List<WifiConfiguration> l_wificonf = wifimgr.getConfiguredNetworks();
+		String s = "";
+		for(WifiConfiguration wificonf : l_wificonf){
+			s+="NetID: "+wificonf.networkId+"| BSSID: "+wificonf.BSSID + "| SSID: "+wificonf.SSID+"| State: "+wificonf.status+"\n";
+			
+		}
+		Log.i(TAG,"restore configure network::"+s);
+		
+		if(v_configuredNetID.size()>0){
+			for(int i : v_configuredNetID){				
+				wifimgr.enableNetwork(i, false);
+			}
+		}
+		
 	}
 
 	private void displayNotificationMessage(String message) {
