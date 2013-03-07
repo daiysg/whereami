@@ -15,8 +15,9 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.Overlay;
+import com.google.android.maps.OverlayItem;
 
-public class MapTabView extends MapActivity implements LocationListener {
+public class MapTabView extends MapActivity {
 	/** Called when the activity is first created. */
 	MapView map;
 	long start;
@@ -25,13 +26,9 @@ public class MapTabView extends MapActivity implements LocationListener {
 	MapController controller;
 	int x, y;
 	GeoPoint toutchedPoint;
-	Drawable d;
+	Drawable defautlmarker;
 	List<Overlay> overlayList;
-	LocationManager im;
-	String towers;
-	int lat = 0;
-	int longi = 0;
-	Drawable drawable;
+	LocationManager lm;
 
 	MyItemizedOverlay itemizedOverlay;
 	List<Overlay> mapOverlays;
@@ -44,82 +41,36 @@ public class MapTabView extends MapActivity implements LocationListener {
 		setContentView(R.layout.maptabview);
 		map = (MapView) findViewById(R.id.mapview);
 		map.setBuiltInZoomControls(true);
-
-		compass = new MyLocationOverlay(this, map);
-		map.getOverlays().add(compass);
+		mapOverlays = map.getOverlays();
 		controller = map.getController();
 
-		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		defautlmarker = getResources().getDrawable(R.drawable.pin);
+		itemizedOverlay = new MyItemizedOverlay(defautlmarker, this);
+		
+		//============show a pin at i3 building=================//
+		double lat = 1.292409;
+		double lon = 103.775707;
+		GeoPoint i3 = new GeoPoint((int) (lat* 1000000), (int) (lon*1000000));
+		OverlayItem i3building = new OverlayItem(i3, "I3 building", "21 Heng Meng Keng Terrace");
+		itemizedOverlay.addOverlay(i3building);
+		mapOverlays.add(itemizedOverlay);
+		//=========== end of showing pin at i3 building =========== //		
 
-		LocationListener locationListener = new LocationListener() {
-			public void onLocationChanged(Location location) {
-				// Called when a new location is found by the network location
-				// provider.
-				// makeUseOfNewLocation(location);
-			}
-
-			public void onStatusChanged(String provider, int status,
-					Bundle extras) {
-			}
-
-			public void onProviderEnabled(String provider) {
-			}
-
-			public void onProviderDisabled(String provider) {
-			}
-		};
-
-		// Register the listener with the Location Manager to receive location
-		// updates
-		lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,
-				locationListener);
-		Location currentLocation = lm
-				.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-		// SharedPreferences preferences =
-		// getSharedPreferences(BasicWifiLocation.PREFERENCES, MODE_PRIVATE);
-		// double lat =
-		// Double.valueOf(preferences.getString(BasicWifiLocation.LOCATION_AP_LAT,
-		// ""));
-		// double lon =
-		// Double.valueOf(preferences.getString(BasicWifiLocation.LOCATION_AP_LONG,
-		// ""));
-
-		double lat = 1.292570;
-		double lon = 103.775919;
-		double lat2 = 1.292580;
-
-		// GeoPoint point = new GeoPoint((int) (lat* 1000000), (int) (lon*
-		// 1000000));
-		// GeoPoint point2 = new GeoPoint((int) (lat2* 1000000), (int) (lon*
-		// 1000000));
-
-		// GeoPoint point2 = new GeoPoint(143860,11552297);
-		// OverlayItem overlayItem2 = new OverlayItem(point2, "whats upppp",
-		// "second");
-
-		// working below
-		if (currentLocation != null) {
-
-			GeoPoint point = new GeoPoint(
-					(int) (currentLocation.getLatitude() * 1000000),
-					(int) (currentLocation.getLongitude() * 1000000));
-
+		locationoverlay = new MyLocationOverlay(this, map);
+		mapOverlays.add(locationoverlay);
+		GeoPoint point = locationoverlay.getMyLocation();
+		if(point != null){
 			controller.animateTo(point);
 			controller.setZoom(17);
-			d = getResources().getDrawable(R.drawable.pin);
-
-			// built in overlay
-			locationoverlay = new MyLocationOverlay(this, map);
-			map.getOverlays().add(locationoverlay);
-
+		}else{
+			controller.animateTo(i3);
+			controller.setZoom(15);
 		}
-
 	}
 
 	@Override
 	protected void onPause() {
-		compass.disableCompass();
+		locationoverlay.disableCompass();
 		locationoverlay.disableMyLocation();
 		super.onPause();
 
@@ -127,9 +78,7 @@ public class MapTabView extends MapActivity implements LocationListener {
 
 	@Override
 	protected void onResume() {
-
-		// enable for overlay to work
-		compass.enableCompass();
+		locationoverlay.enableCompass();
 		locationoverlay.enableMyLocation();
 		super.onResume();
 
@@ -137,22 +86,8 @@ public class MapTabView extends MapActivity implements LocationListener {
 
 	@Override
 	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void onLocationChanged(Location l) {
-
-		map.getOverlays().add(locationoverlay);
-	}
-
-	public void onProviderDisabled(String arg0) {
-
-	}
-
-	public void onProviderEnabled(String arg0) {
-
-	}
-
-	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
-	}
 }
