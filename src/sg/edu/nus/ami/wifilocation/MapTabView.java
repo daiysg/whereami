@@ -2,10 +2,7 @@ package sg.edu.nus.ami.wifilocation;
 
 import java.util.List;
 
-import android.content.Context;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 
@@ -20,20 +17,12 @@ import com.google.android.maps.OverlayItem;
 public class MapTabView extends MapActivity {
 	/** Called when the activity is first created. */
 	MapView map;
-	long start;
-	long stop;
-	MyLocationOverlay compass;
 	MapController controller;
-	int x, y;
-	GeoPoint toutchedPoint;
 	Drawable defautlmarker;
-	List<Overlay> overlayList;
 	LocationManager lm;
-
 	MyItemizedOverlay itemizedOverlay;
-	List<Overlay> mapOverlays;
-
 	MyLocationOverlay locationoverlay;
+	List<Overlay> mapOverlays;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -53,7 +42,7 @@ public class MapTabView extends MapActivity {
 		GeoPoint i3 = new GeoPoint((int) (lat* 1000000), (int) (lon*1000000));
 		OverlayItem i3building = new OverlayItem(i3, "I3 building", "21 Heng Meng Keng Terrace");
 		itemizedOverlay.addOverlay(i3building);
-		mapOverlays.add(itemizedOverlay);
+//		mapOverlays.add(itemizedOverlay);
 		//=========== end of showing pin at i3 building =========== //		
 
 		locationoverlay = new MyLocationOverlay(this, map);
