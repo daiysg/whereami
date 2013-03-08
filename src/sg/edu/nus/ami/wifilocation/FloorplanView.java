@@ -13,9 +13,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,6 +47,7 @@ public class FloorplanView extends Activity {
 	Bitmap bm_floorplan;
 //	String bdg_floor;
 	String APname;
+	double accuracy;
 	BroadcastReceiver locationReceiver;
 	
 
@@ -69,29 +72,40 @@ public class FloorplanView extends Activity {
 					APLocation apLocation = new APLocation();
 					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
 					String temp_APname = apLocation.getAp_name();
+					double temp_accuracy = apLocation.getAccuracy();
 //					String temp_bdg_floor = APname.substring(0, APname.indexOf("AP") - 1);
-					if(APname==null|| !temp_APname.equals(APname)){
+					if(APname==null||!temp_APname.equals(APname)||Math.abs(accuracy - temp_accuracy)>1){
 //						bdg_floor = temp_bdg_floor;
-						APname = temp_APname;
+//						APname = temp_APname;
 						
 						//TODO: start an asynctask to update the imageview
-						new BitmapWorkerTask(imageView).execute(getURL(APname));
+						// assume apname and accuracy are bound together
+						APname = apLocation.getAp_name();
+						accuracy = apLocation.getAccuracy();
+						new BitmapWorkerTask(imageView).execute(getURL(APname,String.format("%1$.2f", accuracy)));
 						
 					}else{
-						//do nothing	
+//						do nothing	
 					}
 					
-					Log.v(DEBUG_TAG, "receive location service "+APname);
+					Log.v(DEBUG_TAG, "receive location service "+APname+" , "+accuracy);
 				}
 			};
 		}
 
-		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
+//		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
 		imageView.setScaleType(ScaleType.MATRIX);
 		// enable touch
 		imageView.setOnTouchListener(new Touch());
+		
+		Resources r = getResources();
+		Drawable[] layers = new Drawable[2];
+		layers[0] = r.getDrawable(R.drawable.gettingfloormap);
+		layers[1] = r.getDrawable(R.drawable.blue_dot_circle);
+		LayerDrawable layerDrawable = new LayerDrawable(layers);
+		imageView.setImageDrawable(layerDrawable);
 		
 		setContentView(imageView);
 
@@ -139,9 +153,25 @@ public class FloorplanView extends Activity {
 		}
 	}
 	
+	public String getURL(String apname, String accuracy) {
+		
+		try {		
+			String url = Baseurl+"/api/api/GeoserverURLGetter";
+			RestClient client = new RestClient(url);
+			client.AddParam("apname", apname);
+			client.AddParam("accuracy", accuracy);
+			client.Execute(RequestMethod.GET);
+			return client.getResponse();
+		}catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	//decodes image and scales it to reduce memory consumption
 	private Bitmap decodeInputStream(String url){
 	    try {
+	    	Log.v(DEBUG_TAG, url);
 	    	InputStream is = (InputStream) new URL(url).getContent();
 	        //Decode image size
 	        BitmapFactory.Options o = new BitmapFactory.Options();
