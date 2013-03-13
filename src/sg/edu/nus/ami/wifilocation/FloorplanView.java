@@ -1,7 +1,12 @@
 package sg.edu.nus.ami.wifilocation;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
@@ -15,7 +20,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory.Options;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.AsyncTask;
@@ -50,16 +58,18 @@ public class FloorplanView extends Activity {
 	double accuracy;
 	BroadcastReceiver locationReceiver;
 	
+	Drawable[] layers; 
+	LayerDrawable ld;
+	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-//		setContentView(R.layout.floorplanview);
 
 		Log.d(DEBUG_TAG, "floorplanview tab");
 		imageView = new MyImageView(getApplicationContext());
+		layers = new Drawable[2];
 
-//		imageView = (MyImageView) findViewById(R.id.imageView_01);
 		
 		if(locationReceiver==null){
 			locationReceiver = new BroadcastReceiver() {
@@ -71,42 +81,81 @@ public class FloorplanView extends Activity {
 					Gson gson = new GsonBuilder().serializeNulls().create();
 					APLocation apLocation = new APLocation();
 					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
+					
 					String temp_APname = apLocation.getAp_name();
 					double temp_accuracy = apLocation.getAccuracy();
-//					String temp_bdg_floor = APname.substring(0, APname.indexOf("AP") - 1);
-					if(APname==null||!temp_APname.equals(APname)||Math.abs(accuracy - temp_accuracy)>1){
-//						bdg_floor = temp_bdg_floor;
-//						APname = temp_APname;
-						
-						//TODO: start an asynctask to update the imageview
-						// assume apname and accuracy are bound together
-						APname = apLocation.getAp_name();
-						accuracy = apLocation.getAccuracy();
-						new BitmapWorkerTask(imageView).execute(getURL(APname,String.format("%1$.2f", accuracy)));
-						
-					}else{
-//						do nothing	
-					}
 					
+					if(APname == null ||!temp_APname.equals(APname)){
+						APname = apLocation.getAp_name();
+						File file1 = getApplicationContext().getFileStreamPath(APname+".png");
+						Log.d(DEBUG_TAG, file1.getAbsolutePath());
+						if(!file1.exists()){
+							try {
+								file1.createNewFile();
+								Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(getURL(APname, null, null)).getContent());
+								FileOutputStream fos = new FileOutputStream(file1);
+								bitmap.compress(CompressFormat.PNG, 0, fos);
+								fos.close();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							
+						}
+						
+						try {
+							BitmapFactory.Options o1 = new BitmapFactory.Options();
+							o1.inSampleSize = 4;							
+							Drawable d0 = BitmapDrawable.createFromResourceStream(getResources(), null, new FileInputStream(file1), null, o1);
+							
+							accuracy = temp_accuracy;
+							BitmapFactory.Options o = new BitmapFactory.Options();
+							o.inSampleSize = 4;
+							Bitmap bitmap;
+							bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
+							BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
+							layers[0] = d0;
+							layers[1] = d;
+							
+							ld = new LayerDrawable(layers);
+							imageView.setImageDrawable(ld);
+						} catch (MalformedURLException e) {
+							e.printStackTrace();
+							imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
+						} catch (IOException e) {
+							imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
+							e.printStackTrace();
+						}
+						
+						
+					}else if (Math.abs(accuracy - temp_accuracy)>0.5) {
+						try {
+							accuracy = temp_accuracy;
+							BitmapFactory.Options o = new BitmapFactory.Options();
+							o.inSampleSize = 4;
+							Bitmap bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
+							BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
+							layers[1] = d;
+							
+							ld = new LayerDrawable(layers);
+							imageView.setImageDrawable(ld);
+						} catch (MalformedURLException e) {
+							e.printStackTrace();
+							imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
+						} catch (IOException e) {
+							e.printStackTrace();
+							imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
+						}
+					}
 					Log.v(DEBUG_TAG, "receive location service "+APname+" , "+accuracy);
 				}
 			};
 		}
 
-//		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
+		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
 		imageView.setScaleType(ScaleType.MATRIX);
-		// enable touch
 		imageView.setOnTouchListener(new Touch());
-		
-		Resources r = getResources();
-		Drawable[] layers = new Drawable[2];
-		layers[0] = r.getDrawable(R.drawable.gettingfloormap);
-		layers[1] = r.getDrawable(R.drawable.blue_dot_circle);
-		LayerDrawable layerDrawable = new LayerDrawable(layers);
-		imageView.setImageDrawable(layerDrawable);
-		
 		setContentView(imageView);
 
 	}
@@ -126,26 +175,19 @@ public class FloorplanView extends Activity {
 		Log.d(DEBUG_TAG,"onPause, unregister locationreceiver");
 	}
 
-	private Drawable LoadImageFromWebOperations(String url) {
-		try {
-			InputStream is = (InputStream) new URL(url).getContent();
-			Drawable d = Drawable.createFromStream(is, "src name");
-			Log.v(DEBUG_TAG, url);
-			return d;
-		} catch (Exception e) {
-			System.out.println("Exc=" + e);
-		}
-		
-		return getResources().getDrawable(R.drawable.nofloormap);
-	}
-
-	public String getURL(String apname) {
+	public String getURL(String apname, String accuracy, String floorplan) {
 		
 		try {		
 			String url = Baseurl+"/api/api/GeoserverURLGetter";
 			RestClient client = new RestClient(url);
-			client.AddParam("apname", apname);
+			if(apname != null)
+				client.AddParam("apname", apname);
+			if(accuracy != null)
+				client.AddParam("accuracy", accuracy);
+			if(floorplan != null)
+				client.AddParam("floorplan", floorplan);
 			client.Execute(RequestMethod.GET);
+			Log.d(DEBUG_TAG, client.getResponse());
 			return client.getResponse();
 		}catch (Exception e) {
 			e.printStackTrace();
@@ -153,75 +195,5 @@ public class FloorplanView extends Activity {
 		}
 	}
 	
-	public String getURL(String apname, String accuracy) {
-		
-		try {		
-			String url = Baseurl+"/api/api/GeoserverURLGetter";
-			RestClient client = new RestClient(url);
-			client.AddParam("apname", apname);
-			client.AddParam("accuracy", accuracy);
-			client.Execute(RequestMethod.GET);
-			return client.getResponse();
-		}catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	//decodes image and scales it to reduce memory consumption
-	private Bitmap decodeInputStream(String url){
-	    try {
-	    	Log.v(DEBUG_TAG, url);
-	    	InputStream is = (InputStream) new URL(url).getContent();
-	        //Decode image size
-	        BitmapFactory.Options o = new BitmapFactory.Options();
-	        o.inJustDecodeBounds = true;
-	        BitmapFactory.decodeStream(is, null, o);
 
-	        //The new size we want to scale to
-	        final int REQUIRED_SIZE=700;
-
-	        //Find the correct scale value. It should be the power of 2.
-	        int scale=1;
-	        while(o.outWidth/scale/2>=REQUIRED_SIZE && o.outHeight/scale/2>=REQUIRED_SIZE)
-	            scale*=2;
-
-	        //Decode with inSampleSize
-	        BitmapFactory.Options o2 = new BitmapFactory.Options();
-	        o2.inSampleSize=scale;
-	        InputStream is1 = (InputStream) new URL(url).getContent();
-	        return BitmapFactory.decodeStream(is1, null, o2);
-	    } catch (Exception e) {}
-	    return BitmapFactory.decodeResource(getResources(), R.drawable.nofloormap);
-	}
-	
-	class BitmapWorkerTask extends AsyncTask<String, Integer, Bitmap> {
-	    private final WeakReference<ImageView> imageViewReference;
-	    private int data = 0;
-
-	    public BitmapWorkerTask(ImageView imageView) {
-	        // Use a WeakReference to ensure the ImageView can be garbage collected
-	        imageViewReference = new WeakReference<ImageView>(imageView);
-	    }
-
-	    // Decode image in background.
-	    protected Bitmap doInBackground(String... params) {
-	        return decodeInputStream(params[0]);
-	    }
-	    
-	    protected void onProgressUpdate(Integer progress){
-	    	setProgress(progress);
-	    }
-
-	    // Once complete, see if ImageView is still around and set bitmap.
-	    @Override
-	    protected void onPostExecute(Bitmap bitmap) {
-	        if (imageViewReference != null && bitmap != null) {
-	            final ImageView imageView = imageViewReference.get();
-	            if (imageView != null) {
-	                imageView.setImageBitmap(bitmap);
-	            }
-	        }
-	    }
-	}
 }
