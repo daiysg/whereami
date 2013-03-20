@@ -48,7 +48,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	/** Called when the activity is first created. */
 
 	private static final String DEBUG_TAG = "AndroidWifiLocation";
-	private int m_defaultnetworkpreference;
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 	
 	Button bt_location;
@@ -139,8 +138,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-		m_defaultnetworkpreference = cm.getNetworkPreference();
-		changeNetworkPreference();
 
 		getPosHandler = new Handler();
 		apLocation = new APLocation();
@@ -300,7 +297,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		super.onDestroy();
 		Intent service = new Intent(this, ServiceLocation.class);
 		stopService(service);
-		restoreNetworkPreference();
 		Log.v(DEBUG_TAG, "onDestroy, stop service");
 		finish();
 	}
@@ -407,25 +403,4 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		}
 	}
 	
-	public void changeNetworkPreference(){
-		NetworkInfo mobile = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-		//if 3g/4g available, change preference to 3g/4g
-		//else keep default preference to wifi
-		if(mobile.isConnectedOrConnecting()){
-			cm.setNetworkPreference(ConnectivityManager.TYPE_MOBILE);
-		}
-//		cm.setNetworkPreference(ConnectivityManager.TYPE_WIFI);
-		
-	}
-	
-	public void restoreNetworkPreference(){
-		if(cm.getNetworkPreference() != m_defaultnetworkpreference){
-			cm.setNetworkPreference(m_defaultnetworkpreference);
-		}
-		
-		//some time there app crash, it does not restore the networkpreference,
-		//force the network preference to wifi, which is the default
-		cm.setNetworkPreference(ConnectivityManager.TYPE_WIFI);
-		
-	}
 }
