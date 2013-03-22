@@ -8,7 +8,6 @@ public class Splash extends Activity{
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.intro);
 		Thread timer = new Thread(){
@@ -21,23 +20,9 @@ public class Splash extends Activity{
 					Intent i = new Intent("sg.edu.nus.ami.wifilocation");
 					startActivity(i);
 					Splash.this.finish();
-					
 				}
 			}
-		
 		};
 		timer.start();
-		
 	}
-
-	@Override
-	protected void onPause() {
-		// TODO Auto-generated method stub
-		super.onPause();
-//		finish();
-	}
-
-	
-	
-
 }
