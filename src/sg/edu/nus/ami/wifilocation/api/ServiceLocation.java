@@ -71,6 +71,8 @@ public class ServiceLocation extends Service {
 	Thread t_wifiscantimer;
 	boolean b_wifiscantimer_continue = true;
 	private boolean shouldturnoffwifi = false;
+	
+	public boolean started = false;
 
 	@Override
 	public void onCreate() {
@@ -103,20 +105,26 @@ public class ServiceLocation extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
-		Toast.makeText(this, "ServiceLocation Started.", Toast.LENGTH_SHORT)
-				.show();
-
-		// DO SOMETHING
-//		int counter = intent.getExtras().getInt("counter");
-		int counter = 0;
-		new Thread(myThreads, new ServiceWorker(counter), "ServiceLocation")
-				.start();
 		
-		t_wifiscantimer.start();
-		Log.i(TAG, "wifiscantimer thread started, thread id:  "+ t_wifiscantimer.getId());
+		if(started){
+			Log.i(TAG, "service started before");
+			return START_STICKY;
+		}else{
+			
+			Toast.makeText(this, "ServiceLocation Started.", Toast.LENGTH_SHORT)
+			.show();
+			
+			int counter = 0;
+			new Thread(myThreads, new ServiceWorker(counter), "ServiceLocation")
+			.start();
+			
+			t_wifiscantimer.start();
+			Log.i(TAG, "wifiscantimer thread started, thread id:  "+ t_wifiscantimer.getId());
 
-		return START_STICKY;
+			started = true;
+			return START_STICKY;
+			
+		}
 	}
 
 	/**
