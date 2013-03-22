@@ -248,15 +248,10 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		if (wifimgr.isWifiEnabled() == false) {
 			showDialog(DIALOG_WIFI_ID);
 		} 
-		// start service
-		if (!isMyServiceRunning()) {
-			int counter = 1;
-			Intent ls_intent = new Intent(this, ServiceLocation.class);
-			ls_intent.putExtra("counter", counter++);
-			startService(ls_intent);
-			Log.v(DEBUG_TAG, "onResume(), start location service");
-		}
-	
+
+		Intent ls_intent = new Intent(this, ServiceLocation.class);
+		startService(ls_intent);
+		Log.v(DEBUG_TAG, "onResume(), start location service");
 
 		registerReceiver(receiver, new IntentFilter(
 				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
@@ -264,18 +259,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		Log.d(DEBUG_TAG,
 				"onResume(), create wifi broadcast receiver and register receiver\n" +
 				"and also create location service receiver and register receiver\n");
-	}
-
-	private boolean isMyServiceRunning() {
-		ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-		for (RunningServiceInfo service : manager
-				.getRunningServices(Integer.MAX_VALUE)) {
-			if ("sg.edu.nus.ami.wifilocation.api.ServiceLocation"
-					.equals(service.service.getClassName())) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override
