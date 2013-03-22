@@ -145,20 +145,6 @@
                         </TableLayout>
                     </LinearLayout>
                 </ScrollView>
-
-                <ScrollView
-                    android:id="@+id/tab_googlemap"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:scrollbars="vertical" >
-                </ScrollView>
-
-                <ScrollView
-                    android:id="@+id/tab_floorplan"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:scrollbars="vertical" >
-                </ScrollView>
             </FrameLayout>
         </LinearLayout>
     </TabHost>
