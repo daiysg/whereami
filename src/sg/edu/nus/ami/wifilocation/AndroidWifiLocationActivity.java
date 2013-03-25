@@ -1,7 +1,5 @@
 package sg.edu.nus.ami.wifilocation;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,8 +7,6 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.BroadcastReceiver;
@@ -24,13 +20,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -71,7 +64,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 	BroadcastReceiver locationReceiver;
 	ConnectivityManager cm;
 	
-	Handler getPosHandler;
 	APLocation apLocation;
 	Vector<APLocation> v_apLocation;
 
@@ -139,18 +131,21 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		
 		cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
-		getPosHandler = new Handler();
 		apLocation = new APLocation();
 
-		// register broadcast receiver
-		if (receiver == null) {
-			receiver = new BroadcastReceiver() {
-
+		if(locationReceiver == null){
+			locationReceiver = new BroadcastReceiver() {
+				
 				@Override
 				public void onReceive(Context context, Intent intent) {
-
-					// clear the nus official ap list record every time when
-					// refresh
+					// TODO Auto-generated method stub
+					String action = intent.getAction();
+					Bundle bundle = intent.getExtras();
+					Gson gson = new GsonBuilder().serializeNulls().create();
+					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
+					
+					List<ScanResult> wifilist = bundle.getParcelableArrayList("wifilist");
+					
 					wifinus.removeAllElements();
 
 					StringBuilder sb1 = new StringBuilder();
@@ -161,12 +156,8 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 					StringBuilder sb2_1 = new StringBuilder();
 					StringBuilder sb3_1 = new StringBuilder();
 
-					List<ScanResult> wifilist = wifimgr.getScanResults();
-
 					if(wifilist != null)
 					{
-						Collections.sort(wifilist, new CmpScan());
-						
 						for (ScanResult wifipoint : wifilist) {
 							sb1.append(wifipoint.SSID + "\n");
 							sb2.append(wifipoint.BSSID + "\n");
@@ -180,7 +171,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 								sb3_1.append(wifipoint.level + "\n");
 							}
 						}
-						
 					}
 
 					// non nus point
@@ -192,32 +182,13 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 					tv_ssid_1.setText(sb1_1);
 					tv_bssid_1.setText(sb2_1);
 					tv_level_1.setText(sb3_1);
+					
+					String text = "You are near "
+							+ apLocation.getAp_location()
+							+ " in the building of "
+							+ apLocation.getBuilding() + "\n";
 
-				}
-			};
-
-		}// if
-		
-		if(locationReceiver == null){
-			locationReceiver = new BroadcastReceiver() {
-				
-				@Override
-				public void onReceive(Context context, Intent intent) {
-					// TODO Auto-generated method stub
-					String action = intent.getAction();
-					Bundle bundle = intent.getExtras();
-					Gson gson = new GsonBuilder().serializeNulls().create();
-					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
-					getPosHandler.post(new Runnable() {
-						public void run() {
-							String text = "You are near "
-									+ apLocation.getAp_location()
-									+ " in the building of "
-									+ apLocation.getBuilding() + "\n";
-
-							tv_location.setText(text);
-						}
-					});
+					tv_location.setText(text);
 				}
 			};
 		}
@@ -253,8 +224,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		startService(ls_intent);
 		Log.v(DEBUG_TAG, "onResume(), start location service");
 
-		registerReceiver(receiver, new IntentFilter(
-				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 		registerReceiver(locationReceiver, new IntentFilter(ServiceLocation.BROADCAST_ACTION));
 		Log.d(DEBUG_TAG,
 				"onResume(), create wifi broadcast receiver and register receiver\n" +
@@ -263,7 +232,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 
 	@Override
 	public void onPause() {
-		unregisterReceiver(receiver);
 		unregisterReceiver(locationReceiver);
 		Log.d(DEBUG_TAG, "onPause(), unregisterReceiver");
 		super.onPause();
@@ -282,14 +250,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		stopService(service);
 		Log.v(DEBUG_TAG, "onDestroy, stop service");
 		finish();
-	}
-
-	public class CmpScan implements Comparator<ScanResult> {
-
-		public int compare(ScanResult o1, ScanResult o2) {
-
-			return o2.level - o1.level;
-		}
 	}
 
 	protected AlertDialog onCreateDialog(int id) {
