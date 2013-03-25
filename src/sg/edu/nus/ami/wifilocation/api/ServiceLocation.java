@@ -1,5 +1,6 @@
 package sg.edu.nus.ami.wifilocation.api;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -209,9 +211,11 @@ public class ServiceLocation extends Service {
 								Gson gson = new GsonBuilder().serializeNulls().create();
 								return_intent.putExtra("ap_location",
 										gson.toJson(apLocation, APLocation.class));
+								return_intent.putParcelableArrayListExtra("wifilist", (ArrayList<ScanResult>) wifilist);
 								sendBroadcast(return_intent);
 
 								Log.v(TAG2, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
+								Log.v(TAG2, "Sending Object over. wifilist: "+wifilist.size());
 
 							}
 						}
