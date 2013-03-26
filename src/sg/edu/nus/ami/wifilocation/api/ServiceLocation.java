@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import sg.edu.nus.ami.wifilocation.AndroidWifiLocationActivity;
 import sg.edu.nus.ami.wifilocation.R;
-import sg.edu.nus.ami.wifilocation.Splash;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -20,13 +19,11 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -72,7 +69,6 @@ public class ServiceLocation extends Service {
 	Handler h_wifiscantimer;
 	Thread t_wifiscantimer;
 	boolean b_wifiscantimer_continue = true;
-	private boolean shouldturnoffwifi = false;
 	
 	public boolean started = false;
 
@@ -92,7 +88,6 @@ public class ServiceLocation extends Service {
 		displayNotificationMessage("Background Service 'ServiceLocation' is running.");
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		v_configuredNetID = new Vector<Integer>();
 	}
 
 	/**
@@ -141,21 +136,13 @@ public class ServiceLocation extends Service {
 		}
 
 		public void run() {
-			final String TAG2 = "ServiceWorker:"
-					+ Thread.currentThread().getId();
 
 			wifinus = new Vector<ScanResult>();
 			apLocation = new APLocation();
 			geoloc = new Geoloc();
 
-			if (wifimgr.isWifiEnabled() == false) {
-				wifimgr.setWifiEnabled(true);
-				shouldturnoffwifi = true;
-			}
-			
 			acquireWifiLock();
-
-			startWifiScan();
+			wifimgr.startScan();
 
 			if (receiver == null) {
 				receiver = new BroadcastReceiver() {
@@ -171,13 +158,9 @@ public class ServiceLocation extends Service {
 						if (wifilist!=null) {
 							Collections.sort(wifilist, new CmpScan());
 							for (ScanResult wifipoint : wifilist) {
-
 								if (wifipoint.SSID.equals("NUS")
 										|| wifipoint.SSID.equals("NUSOPEN")) {
 									wifinus.add(wifipoint);
-
-									Log.v(TAG2, "wifi_point = "
-											+ wifipoint.SSID);
 								}
 							}
 						}
@@ -199,7 +182,7 @@ public class ServiceLocation extends Service {
 							v_apLocation = nusGeoloc.getLocationBasedOnAP(mac,
 									strength);
 							if (v_apLocation.isEmpty()) {
-								Log.v(TAG2 + "NO_LOCATION",
+								Log.v(TAG + "NO_LOCATION",
 										"No location is available");
 							} else {
 								// choose the nearest location
@@ -214,44 +197,35 @@ public class ServiceLocation extends Service {
 								return_intent.putParcelableArrayListExtra("wifilist", (ArrayList<ScanResult>) wifilist);
 								sendBroadcast(return_intent);
 
-								Log.v(TAG2, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
-								Log.v(TAG2, "Sending Object over. wifilist: "+wifilist.size());
+								Log.v(TAG, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
+								Log.v(TAG, "Sending Object over. wifilist: "+wifilist.size());
 
 							}
 						}
 
-
 						lastResultTimetamp = System.currentTimeMillis();
-						startWifiScan();
-						Log.d(TAG, "loop wifi scan within location service, scan wifi at "+lastResultTimetamp);
-
+						wifimgr.startScan();
+						Log.d(TAG, "loop wifi scan within location service, scan wifi at "+lastResultTimetamp+", Thread id: "+Thread.currentThread().getId());
 					}
 				};
-
 			}
 			
 			registerReceiver(receiver, new IntentFilter(
 					WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-			Log.v(TAG2, "run() in ServiceWorker in LocationService");
-
+			Log.v(TAG, "run() in ServiceWorker in LocationService, thread id: "+Thread.currentThread().getId());
 		}
 	}
 	
 	Runnable wifiscantimer = new Runnable() {
 		
 		public void run() {
-			// TODO Auto-generated method stub
 			if(System.currentTimeMillis()-lastResultTimetamp>WifiScanInterval){
-				startWifiScan();
+				wifimgr.startScan();
 				Log.i(TAG,"wifi scan started by timer");
 			}
 			if(b_wifiscantimer_continue){
-				wifiInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-				_wifiInfo = wifimgr.getConnectionInfo();
-				Log.i(TAG, wifiInfo.getDetailedState().toString()+" wifimgr wifi info: "+_wifiInfo.getSupplicantState().toString()+
-						"ip: "+_wifiInfo.getIpAddress());
 				h_wifiscantimer.postDelayed(wifiscantimer, 1000);
-				Log.i(TAG, "here is wifi timer, thread id: "+Thread.currentThread().getId());
+				Log.i(TAG, "wifi timer postdelayed, thread id: "+Thread.currentThread().getId());
 			}
 		}
 	};
@@ -265,31 +239,11 @@ public class ServiceLocation extends Service {
 		}
 
 		releaseWifiLock();
-		if(shouldturnoffwifi)
-			wifimgr.setWifiEnabled(false);
-		Toast.makeText(this, "ServiceLocation Done.", Toast.LENGTH_LONG).show();
+		Toast.makeText(this, "ServiceLocation Done.", Toast.LENGTH_SHORT).show();
 		myThreads.interrupt();
 		b_wifiscantimer_continue = false;
 		Log.i(TAG,"onDestroy, set wifiscantimer_continue flag to false");
 		notifmgr.cancelAll();
-
-	}
-	
-	/**
-	 * this method is to tweak the wifiscan
-	 * check wifi state before start wifi scan
-	 * 
-	 */
-	public void startWifiScan(){
-//		wifiInfo = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-//		Log.i(TAG, wifiInfo.getDetailedState().toString());
-		
-		boolean startedsuccessfully = wifimgr.startScan();
-		if(startedsuccessfully){
-			Log.i(TAG, "wifi scan started successfully");
-		}else{
-			Log.e(TAG, "wifi scan failed");
-		}
 	}
 	
 	private void displayNotificationMessage(String message) {
@@ -309,8 +263,6 @@ public class ServiceLocation extends Service {
 		 * 
 		 */
 		Intent intent = new Intent(this,AndroidWifiLocationActivity.class);
-
-		
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 		/**
 		 * Deprecated 
@@ -329,7 +281,6 @@ public class ServiceLocation extends Service {
 		wifiLock = wifimgr.createWifiLock(WifiManager.WIFI_MODE_SCAN_ONLY, ServiceLocation.class.getName());
 		wifiLock.setReferenceCounted(false);
 		wifiLock.acquire();
-		
 	}
 	
 	private void releaseWifiLock(){
