@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -138,8 +139,6 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 				
 				@Override
 				public void onReceive(Context context, Intent intent) {
-					// TODO Auto-generated method stub
-					String action = intent.getAction();
 					Bundle bundle = intent.getExtras();
 					Gson gson = new GsonBuilder().serializeNulls().create();
 					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
@@ -193,10 +192,11 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			};
 		}
 
-		Log.v(DEBUG_TAG, "onCreate()");
+		Intent ls_intent = new Intent(this, ServiceLocation.class);
+		startService(ls_intent);
+		Log.v(DEBUG_TAG, "onCreate(), start location service");
 
 		checkUpdate(ctx);
-
 	}
 
 	public void onClick(View v) {
@@ -204,43 +204,26 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 			Toast.makeText(this, "Scanning WIFI and searching location",
 					Toast.LENGTH_LONG).show();
 			wifimgr.startScan();
-
 		}
-	}
-
-	@Override
-	public void onRestart() {
-		super.onRestart();
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
+		
+		registerReceiver(locationReceiver, new IntentFilter(ServiceLocation.BROADCAST_ACTION));
+		Log.d(DEBUG_TAG, "onResume(), create location service receiver and register receiver\n");
+	
 		if (wifimgr.isWifiEnabled() == false) {
 			showDialog(DIALOG_WIFI_ID);
 		} 
-
-		Intent ls_intent = new Intent(this, ServiceLocation.class);
-		startService(ls_intent);
-		Log.v(DEBUG_TAG, "onResume(), start location service");
-
-		registerReceiver(locationReceiver, new IntentFilter(ServiceLocation.BROADCAST_ACTION));
-		Log.d(DEBUG_TAG,
-				"onResume(), create wifi broadcast receiver and register receiver\n" +
-				"and also create location service receiver and register receiver\n");
 	}
 
 	@Override
 	public void onPause() {
+		super.onPause();
 		unregisterReceiver(locationReceiver);
 		Log.d(DEBUG_TAG, "onPause(), unregisterReceiver");
-		super.onPause();
-	}
-
-	@Override
-	public void onStop() {
-		super.onStop();
-		Log.v(DEBUG_TAG, "onStop()");
 	}
 
 	@Override
@@ -258,14 +241,13 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		switch (id) {
 		case DIALOG_WIFI_ID:
 			builder.setMessage(
-					"This application requires Wifi, please allow me to turn on wifi, the wifi will be turned off when you exit this app.")
-					.setPositiveButton("Allow",
+					"This application requires Wifi, please turn on wifi")
+					.setPositiveButton("Setting",
 							new DialogInterface.OnClickListener() {
 
 								public void onClick(DialogInterface dialog,
 										int which) {
-									//so far do nothing
-
+									startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
 								}
 							})
 					.setNegativeButton("Cancel",
@@ -274,6 +256,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 								public void onClick(DialogInterface dialog,
 										int which) {
 									dialog.cancel();
+									finish();
 
 								}
 							});
