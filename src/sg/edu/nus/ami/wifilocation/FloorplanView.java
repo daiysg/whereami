@@ -32,6 +32,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.os.Process;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -131,6 +132,7 @@ public class FloorplanView extends Activity {
 						
 						
 					}else if (Math.abs(accuracy - temp_accuracy)>2) {
+						Log.v(DEBUG_TAG, "same ap, diff accuracy: "+ (accuracy - temp_accuracy));
 						try {
 							accuracy = temp_accuracy;
 							BitmapFactory.Options o = new BitmapFactory.Options();
@@ -149,7 +151,7 @@ public class FloorplanView extends Activity {
 							imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
 						}
 					}
-					Log.v(DEBUG_TAG, "receive location service "+APname+" , "+accuracy);
+					Log.v(DEBUG_TAG, "receive location service "+APname+" , "+accuracy+", Thread id: "+Process.myTid());
 				}
 			};
 		}
