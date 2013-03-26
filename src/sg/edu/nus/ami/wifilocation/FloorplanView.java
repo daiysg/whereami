@@ -130,7 +130,7 @@ public class FloorplanView extends Activity {
 						}
 						
 						
-					}else if (Math.abs(accuracy - temp_accuracy)>0.5) {
+					}else if (Math.abs(accuracy - temp_accuracy)>2) {
 						try {
 							accuracy = temp_accuracy;
 							BitmapFactory.Options o = new BitmapFactory.Options();
