@@ -90,6 +90,7 @@ public class FloorplanView extends Activity {
 						File file1 = getApplicationContext().getFileStreamPath(APname+".png");
 						Log.d(DEBUG_TAG, file1.getAbsolutePath());
 						if(!file1.exists()){
+							Log.i(DEBUG_TAG, "file does not exist");
 							try {
 								file1.createNewFile();
 								Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(getURL(APname, null, null)).getContent());
@@ -100,6 +101,8 @@ public class FloorplanView extends Activity {
 								e.printStackTrace();
 							}
 							
+						}{
+							Log.i(DEBUG_TAG, "file does exist");
 						}
 						
 						try {
