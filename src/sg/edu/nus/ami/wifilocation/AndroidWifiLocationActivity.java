@@ -140,54 +140,57 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 				@Override
 				public void onReceive(Context context, Intent intent) {
 					Bundle bundle = intent.getExtras();
-					Gson gson = new GsonBuilder().serializeNulls().create();
-					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
-					
+
 					List<ScanResult> wifilist = bundle.getParcelableArrayList("wifilist");
-					
-					wifinus.removeAllElements();
-
-					StringBuilder sb1 = new StringBuilder();
-					StringBuilder sb2 = new StringBuilder();
-					StringBuilder sb3 = new StringBuilder();
-
-					StringBuilder sb1_1 = new StringBuilder();
-					StringBuilder sb2_1 = new StringBuilder();
-					StringBuilder sb3_1 = new StringBuilder();
-
-					if(wifilist != null)
-					{
-						for (ScanResult wifipoint : wifilist) {
-							sb1.append(wifipoint.SSID + "\n");
-							sb2.append(wifipoint.BSSID + "\n");
-							sb3.append(wifipoint.level + "\n");
-							
-							if (wifipoint.SSID.equals("NUS")
-									|| wifipoint.SSID.equals("NUSOPEN")) {
-								wifinus.add(wifipoint);
-								sb1_1.append(wifipoint.SSID + "\n");
-								sb2_1.append(wifipoint.BSSID + "\n");
-								sb3_1.append(wifipoint.level + "\n");
+					if(wifilist!=null){
+						wifinus.removeAllElements();
+	
+						StringBuilder sb1 = new StringBuilder();
+						StringBuilder sb2 = new StringBuilder();
+						StringBuilder sb3 = new StringBuilder();
+	
+						StringBuilder sb1_1 = new StringBuilder();
+						StringBuilder sb2_1 = new StringBuilder();
+						StringBuilder sb3_1 = new StringBuilder();
+	
+						if(wifilist != null)
+						{
+							for (ScanResult wifipoint : wifilist) {
+								sb1.append(wifipoint.SSID + "\n");
+								sb2.append(wifipoint.BSSID + "\n");
+								sb3.append(wifipoint.level + "\n");
+								
+								if (wifipoint.SSID.equals("NUS")
+										|| wifipoint.SSID.equals("NUSOPEN")) {
+									wifinus.add(wifipoint);
+									sb1_1.append(wifipoint.SSID + "\n");
+									sb2_1.append(wifipoint.BSSID + "\n");
+									sb3_1.append(wifipoint.level + "\n");
+								}
 							}
 						}
+	
+						// non nus point
+						tv_ssid_2.setText(sb1);
+						tv_bssid_2.setText(sb2);
+						tv_level_2.setText(sb3);
+	
+						// for nus point
+						tv_ssid_1.setText(sb1_1);
+						tv_bssid_1.setText(sb2_1);
+						tv_level_1.setText(sb3_1);
 					}
-
-					// non nus point
-					tv_ssid_2.setText(sb1);
-					tv_bssid_2.setText(sb2);
-					tv_level_2.setText(sb3);
-
-					// for nus point
-					tv_ssid_1.setText(sb1_1);
-					tv_bssid_1.setText(sb2_1);
-					tv_level_1.setText(sb3_1);
 					
-					String text = "You are near "
-							+ apLocation.getAp_location()
-							+ " in the building of "
-							+ apLocation.getBuilding() + "\n";
-
-					tv_location.setText(text);
+					Gson gson = new GsonBuilder().serializeNulls().create();
+					if(bundle.getString("ap_location")!=null){
+						apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
+						String text = "You are near "
+								+ apLocation.getAp_location()
+								+ " in the building of "
+								+ apLocation.getBuilding() + "\n";
+						
+						tv_location.setText(text);
+					}
 				}
 			};
 		}
