@@ -22,6 +22,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -59,12 +60,9 @@ public class ServiceLocation extends Service {
 	Vector<Integer> v_configuredNetID;
 
 	Handler getPosHandler;
-	APLocation apLocation;
-	Vector<ScanResult> wifi;
-	Geoloc geoloc;
 
+	Vector<ScanResult> wifi;
 	Vector<ScanResult> wifinus;
-	Vector<APLocation> v_apLocation;
 	
 	Handler h_wifiscantimer;
 	Thread t_wifiscantimer;
@@ -81,13 +79,11 @@ public class ServiceLocation extends Service {
 		h_wifiscantimer = new Handler();
 		t_wifiscantimer = new Thread(wifiscantimer);
 
-
 		Toast.makeText(this, "ServiceLocation CREATED", Toast.LENGTH_SHORT)
 				.show();
 		notifmgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		displayNotificationMessage("Background Service 'ServiceLocation' is running.");
 		wifimgr = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 
 	/**
@@ -136,10 +132,7 @@ public class ServiceLocation extends Service {
 		}
 
 		public void run() {
-
 			wifinus = new Vector<ScanResult>();
-			apLocation = new APLocation();
-			geoloc = new Geoloc();
 
 			acquireWifiLock();
 			wifimgr.startScan();
@@ -153,9 +146,6 @@ public class ServiceLocation extends Service {
 						// clear the nus official ap list record every time when
 						// refresh
 						wifinus.removeAllElements();
-						
-						Intent return_intent = new Intent();
-						return_intent.setAction(BROADCAST_ACTION);
 
 						List<ScanResult> wifilist = wifimgr.getScanResults();
 						if (wifilist!=null) {
@@ -168,38 +158,11 @@ public class ServiceLocation extends Service {
 							}
 						}
 						if (wifinus.size() > 0) {
-
-							NUSGeoloc nusGeoloc = new NUSGeoloc();
-							Vector<String> mac = new Vector<String>(
-									wifinus.size());
-							Vector<Double> strength = new Vector<Double>(
-									wifinus.size());
-							v_apLocation = new Vector<APLocation>(
-									wifinus.size());
-
-							for (ScanResult temp_wifi : wifinus) {
-								mac.add(temp_wifi.BSSID);
-								strength.add(Double.valueOf(temp_wifi.level));
-							}
-
-							v_apLocation = nusGeoloc.getLocationBasedOnAP(mac,
-									strength);
-							if (v_apLocation.isEmpty()) {
-								Log.v(TAG + "NO_LOCATION",
-										"No location is available");
-							} else {
-								// choose the nearest location
-								apLocation = v_apLocation.firstElement();
-								
-								Gson gson = new GsonBuilder().serializeNulls().create();
-								return_intent.putExtra("ap_location",
-										gson.toJson(apLocation, APLocation.class));
-								sendBroadcast(return_intent);
-
-								Log.v(TAG, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
-							}
+							new GetApLocation().execute(wifinus);
 						}
 						
+						Intent return_intent = new Intent();
+						return_intent.setAction(BROADCAST_ACTION);
 						return_intent.putParcelableArrayListExtra("wifilist", (ArrayList<ScanResult>) wifilist);
 						sendBroadcast(return_intent);
 						Log.v(TAG, "Sending Object over. wifilist: "+wifilist.size());
@@ -298,6 +261,54 @@ public class ServiceLocation extends Service {
 		public int compare(ScanResult o1, ScanResult o2) {
 				
 			return o2.level - o1.level;
+		}
+	}
+	
+	private class GetApLocation extends AsyncTask<Vector<ScanResult>, Void, APLocation>{
+
+		@Override
+		protected APLocation doInBackground(Vector<ScanResult>... params) {
+			Vector<ScanResult> wifinus = params[0];
+			NUSGeoloc nusGeoloc = new NUSGeoloc();
+			Vector<String> mac = new Vector<String>(
+					wifinus.size());
+			Vector<Double> strength = new Vector<Double>(
+					wifinus.size());
+			Vector<APLocation> v_apLocation = new Vector<APLocation>(
+					wifinus.size());
+
+			for (ScanResult temp_wifi : wifinus) {
+				mac.add(temp_wifi.BSSID);
+				strength.add(Double.valueOf(temp_wifi.level));
+			}
+
+			v_apLocation = nusGeoloc.getLocationBasedOnAP(mac,
+					strength);
+			if (v_apLocation.isEmpty()) {
+				Log.v(TAG + "NO_LOCATION",
+						"No location is available");
+				return null;
+			} else {
+				// choose the nearest location
+				APLocation apLocation = new APLocation();
+				apLocation = v_apLocation.firstElement();
+				return apLocation;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(APLocation apLocation) {
+			super.onPostExecute(apLocation);
+			if(apLocation != null){
+				Gson gson = new GsonBuilder().serializeNulls().create();
+				Intent return_intent = new Intent();
+				return_intent.setAction(BROADCAST_ACTION);
+				return_intent.putExtra("ap_location",
+						gson.toJson(apLocation, APLocation.class));
+				sendBroadcast(return_intent);
+				
+				Log.v(TAG, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
+			}
 		}
 	}
 
