@@ -70,11 +70,12 @@ public class FloorplanView extends Activity {
 				@Override
 				public void onReceive(Context context, Intent intent) {
 					Bundle bundle = intent.getExtras();
-					Gson gson = new GsonBuilder().serializeNulls().create();
-					APLocation apLocation = new APLocation();
-					apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
-					
-					new UpdateFloorplanImageView().execute(apLocation);
+					if(bundle.getString("ap_location")!=null){
+						Gson gson = new GsonBuilder().serializeNulls().create();
+						APLocation apLocation = new APLocation();
+						apLocation = gson.fromJson(bundle.getString("ap_location"), APLocation.class);
+						new UpdateFloorplanImageView().execute(apLocation);
+					}
 				}
 			};
 		}
@@ -189,6 +190,8 @@ public class FloorplanView extends Activity {
 					e.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
+				} catch (Exception e){
+					e.printStackTrace();
 				}
 			}
 			Log.v(DEBUG_TAG, "receive location service "+APname+" , "+accuracy+", Thread id: "+Process.myTid());
@@ -200,7 +203,7 @@ public class FloorplanView extends Activity {
 		protected void onPostExecute(LayerDrawable result) {
 			super.onPostExecute(result);
 			if(result == null){
-				imageView.setImageDrawable(getResources().getDrawable(R.drawable.gettingfloormap));
+				imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
 			}else{
 				imageView.setImageDrawable(result);
 			}
