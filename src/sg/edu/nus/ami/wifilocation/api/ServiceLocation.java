@@ -153,6 +153,9 @@ public class ServiceLocation extends Service {
 						// clear the nus official ap list record every time when
 						// refresh
 						wifinus.removeAllElements();
+						
+						Intent return_intent = new Intent();
+						return_intent.setAction(BROADCAST_ACTION);
 
 						List<ScanResult> wifilist = wifimgr.getScanResults();
 						if (wifilist!=null) {
@@ -187,21 +190,19 @@ public class ServiceLocation extends Service {
 							} else {
 								// choose the nearest location
 								apLocation = v_apLocation.firstElement();
-
-								Intent return_intent = new Intent();
-								return_intent.setAction(BROADCAST_ACTION);
 								
 								Gson gson = new GsonBuilder().serializeNulls().create();
 								return_intent.putExtra("ap_location",
 										gson.toJson(apLocation, APLocation.class));
-								return_intent.putParcelableArrayListExtra("wifilist", (ArrayList<ScanResult>) wifilist);
 								sendBroadcast(return_intent);
 
 								Log.v(TAG, "Sending Object over."+gson.toJson(apLocation, APLocation.class));
-								Log.v(TAG, "Sending Object over. wifilist: "+wifilist.size());
-
 							}
 						}
+						
+						return_intent.putParcelableArrayListExtra("wifilist", (ArrayList<ScanResult>) wifilist);
+						sendBroadcast(return_intent);
+						Log.v(TAG, "Sending Object over. wifilist: "+wifilist.size());
 
 						lastResultTimetamp = System.currentTimeMillis();
 						wifimgr.startScan();
