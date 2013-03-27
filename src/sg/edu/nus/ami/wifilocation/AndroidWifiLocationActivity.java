@@ -23,6 +23,7 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -199,7 +200,7 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		startService(ls_intent);
 		Log.v(DEBUG_TAG, "onCreate(), start location service");
 
-		checkUpdate(ctx);
+		new CheckUpdate().execute(ctx);
 	}
 
 	public void onClick(View v) {
@@ -297,39 +298,46 @@ public class AndroidWifiLocationActivity extends TabActivity implements
 		return dialog;
 	}
 
-	public void checkUpdate(Context context) {
-		try {
-			PackageManager pm = context.getPackageManager();
-			PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
-			int currentVersionCode = pi.versionCode;
+	private class CheckUpdate extends AsyncTask<Context, Void, Void>{
 
-			String str = "0";
-			String key = "whereami";
-			String url = Baseurl+"/app/versioninfo.txt";
-			RestClient client = new RestClient(url);
-			client.Execute(RequestMethod.GET);
-			String response = client.getResponse();
-			if (response != null) {
-				String[] temp = response.split("[,\n]+");
-				for(int i = 0;i<temp.length;i++){
-					if(key.equals(temp[i])){
-						str = temp[i+1];
-						break;
+		@Override
+		protected Void doInBackground(Context... params) {
+			try {
+				Context context = params[0];
+				PackageManager pm = context.getPackageManager();
+				PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+				int currentVersionCode = pi.versionCode;
+
+				String str = "0";
+				String key = "whereami";
+				String url = Baseurl+"/app/versioninfo.txt";
+				RestClient client = new RestClient(url);
+				client.Execute(RequestMethod.GET);
+				String response = client.getResponse();
+				if (response != null) {
+					String[] temp = response.split("[,\n]+");
+					for(int i = 0;i<temp.length;i++){
+						if(key.equals(temp[i])){
+							str = temp[i+1];
+							break;
+						}
 					}
 				}
+
+				int latestVersionCode = Integer.valueOf(str);
+
+				if (latestVersionCode > currentVersionCode) {
+					showDialog(DIALOG_UPDATE_ID);
+				}
+
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
-			int latestVersionCode = Integer.valueOf(str);
-
-			if (latestVersionCode > currentVersionCode) {
-				showDialog(DIALOG_UPDATE_ID);
-			}
-
-		} catch (NameNotFoundException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
+			return null;
 		}
+		
 	}
 	
 }
