@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.Toast;
 import android.widget.ImageView.ScaleType;
 
 import com.google.gson.Gson;
@@ -75,7 +76,7 @@ public class FloorplanView extends Activity {
 						APname = temp_APname;
 						
 						//TODO: start an asynctask to update the imageview
-						new BitmapWorkerTask(imageView).execute(getURL(APname));
+						new BitmapWorkerTask(imageView).execute(getURL(APname));						
 						
 					}else{
 						//do nothing	
@@ -142,7 +143,8 @@ public class FloorplanView extends Activity {
 	//decodes image and scales it to reduce memory consumption
 	private Bitmap decodeInputStream(String url){
 	    try {
-	    	InputStream is = (InputStream) new URL(url).getContent();
+	    	String replace=url.toString().replace("png", "svg");	    	
+	    	InputStream is = (InputStream) new URL(replace).getContent();
 	        //Decode image size
 	        BitmapFactory.Options o = new BitmapFactory.Options();
 	        o.inJustDecodeBounds = true;
@@ -162,7 +164,7 @@ public class FloorplanView extends Activity {
 	        InputStream is1 = (InputStream) new URL(url).getContent();
 	        return BitmapFactory.decodeStream(is1, null, o2);
 	    } catch (Exception e) {}
-	    return BitmapFactory.decodeResource(getResources(), R.drawable.nofloormap);
+	    return 	BitmapFactory.decodeResource(getResources(), R.drawable.nofloormap);
 	}
 	
 	class BitmapWorkerTask extends AsyncTask<String, Integer, Bitmap> {
@@ -175,8 +177,11 @@ public class FloorplanView extends Activity {
 	    }
 
 	    // Decode image in background.
-	    protected Bitmap doInBackground(String... params) {
-	        return decodeInputStream(params[0]);
+		protected Bitmap doInBackground(String... params) {
+	        Bitmap result=decodeInputStream(params[0]);
+	        int size=result.getByteCount();
+	        
+	        return result;
 	    }
 	    
 	    protected void onProgressUpdate(Integer progress){
