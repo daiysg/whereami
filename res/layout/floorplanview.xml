@@ -14,24 +14,27 @@
      android:adjustViewBounds="true"
      android:scaleType="matrix"
      android:src="@drawable/icon" />
- 
- <Button
+
+ <ImageButton
      android:id="@+id/zoomout"
-     android:layout_width="50dp"
-     android:layout_height="50dp"
+     android:layout_width="60dp"
+     android:layout_height="40dp"
      android:layout_alignParentBottom="true"
      android:layout_alignParentRight="true"
+     android:layout_marginBottom="27dp"
+     android:background="#00000000"
      android:onClick="zoomoutClick"
-     android:text="@string/zoomout"/>
+     android:src="@drawable/map_zoom_out_o" />
 
- <Button
+ <ImageButton
      android:id="@+id/zoomin"
-     android:layout_width="50dp"
-     android:layout_height="50dp"
+     android:layout_width="60dp"
+     android:layout_height="40dp"
      android:layout_above="@+id/zoomout"
-     android:layout_alignLeft="@+id/zoomout"
      android:layout_alignParentRight="true"
+     android:layout_marginBottom="18dp"
+     android:background="#00000000"
      android:onClick="zoominClick"
-     android:text="@string/zoomin"/>
+     android:src="@drawable/map_zoom_in_o" />
     
 </RelativeLayout>
