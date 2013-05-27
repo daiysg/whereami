@@ -1,7 +1,9 @@
 package sg.edu.nus.ami.wifilocation;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
@@ -18,12 +20,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 import android.widget.ImageView.ScaleType;
-
+//import android.widget.ImageView;
+//import android.widget.ImageView.ScaleType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -41,30 +44,36 @@ public class FloorplanView extends Activity {
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 
 
-	MyImageView imageView;
-	Drawable floorplan;
-	Bitmap bm_floorplan;
+	//MyImageView imageView;
+	private ImageView imageView;
+	private Drawable floorplan;
+	private Bitmap bm_floorplan;
+	private Button zoominButton;
 //	String bdg_floor;
-	String APname;
-	BroadcastReceiver locationReceiver;
-	
+	private String APname;
+	int scale=1;
+	private BroadcastReceiver locationReceiver;
+    int REQUIRED_SIZE=700;
+	private Button zoomoutButton;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-//		setContentView(R.layout.floorplanview);
+        setContentView(R.layout.floorplanview);
 
 		Log.d(DEBUG_TAG, "floorplanview tab");
-		imageView = new MyImageView(getApplicationContext());
-
-//		imageView = (MyImageView) findViewById(R.id.imageView_01);
-		
+		//imageView = new MyImageView(getApplicationContext());
+		imageView =(ImageView) findViewById(R.id.imageView_01);
+		zoominButton=(Button) findViewById(R.id.zoomin);
+		zoomoutButton=(Button) findViewById(R.id.zoomout);
+		zoominButton.setVisibility(View.GONE);
+		zoomoutButton.setVisibility(View.GONE);
 		if(locationReceiver==null){
 			locationReceiver = new BroadcastReceiver() {
 				
 				@Override
 				public void onReceive(Context context, Intent intent) {
-					String action = intent.getAction();
+					//String action = intent.getAction();
 					Bundle bundle = intent.getExtras();
 					Gson gson = new GsonBuilder().serializeNulls().create();
 					APLocation apLocation = new APLocation();
@@ -74,10 +83,9 @@ public class FloorplanView extends Activity {
 					if(APname==null|| !temp_APname.equals(APname)){
 //						bdg_floor = temp_bdg_floor;
 						APname = temp_APname;
-						
+						getFitScales(getURL(APname));
 						//TODO: start an asynctask to update the imageview
 						new BitmapWorkerTask(imageView).execute(getURL(APname));						
-						
 					}else{
 						//do nothing	
 					}
@@ -94,7 +102,7 @@ public class FloorplanView extends Activity {
 		// enable touch
 		imageView.setOnTouchListener(new Touch());
 		
-		setContentView(imageView);
+		//setContentView(imageView);
 
 	}
 	
@@ -113,6 +121,7 @@ public class FloorplanView extends Activity {
 		Log.d(DEBUG_TAG,"onPause, unregister locationreceiver");
 	}
 
+	@SuppressWarnings("unused")
 	private Drawable LoadImageFromWebOperations(String url) {
 		try {
 			InputStream is = (InputStream) new URL(url).getContent();
@@ -140,29 +149,55 @@ public class FloorplanView extends Activity {
 		}
 	}
 	
-	//decodes image and scales it to reduce memory consumption
-	private Bitmap decodeInputStream(String url){
-	    try {
-	    	String replace=url.toString().replace("png", "svg");	    	
-	    	InputStream is = (InputStream) new URL(replace).getContent();
-	        //Decode image size
-	        BitmapFactory.Options o = new BitmapFactory.Options();
+	private void getFitScales(String url)
+	{
+		InputStream is;
+		try {
+			is = (InputStream) new URL(url).getContent();
+	     	BitmapFactory.Options o = new BitmapFactory.Options();
 	        o.inJustDecodeBounds = true;
 	        BitmapFactory.decodeStream(is, null, o);
-
 	        //The new size we want to scale to
 	        final int REQUIRED_SIZE=700;
+	        //Find the correct scale value. It should be the power of 2.
+		    while(o.outWidth/scale/2>=REQUIRED_SIZE && o.outHeight/scale/2>=REQUIRED_SIZE)
+	            scale*=2;	
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        //Decode image size
+       
+	}
+	
+	
+	
+	
+	//decodes image and scales it to reduce memory consumption
+	private Bitmap decodeInputStream(String url){
+	    try {   
+	    	//InputStream is = (InputStream) new URL(url).getContent();
+	        //Decode image size
+	    
+/*	    	BitmapFactory.Options o = new BitmapFactory.Options();
+	        o.inJustDecodeBounds = true;
+	        BitmapFactory.decodeStream(is, null, o);
+            
+	        //The new size we want to scale to
+	        final int REQUIRED_SIZE=700;*/
 
 	        //Find the correct scale value. It should be the power of 2.
-	        int scale=1;
-	        while(o.outWidth/scale/2>=REQUIRED_SIZE && o.outHeight/scale/2>=REQUIRED_SIZE)
-	            scale*=2;
-
+/*	        while(o.outWidth/scale/2>=REQUIRED_SIZE && o.outHeight/scale/2>=REQUIRED_SIZE)
+	            scale*=2;	*/     
 	        //Decode with inSampleSize
+	      
 	        BitmapFactory.Options o2 = new BitmapFactory.Options();
 	        o2.inSampleSize=scale;
 	        InputStream is1 = (InputStream) new URL(url).getContent();
-	        return BitmapFactory.decodeStream(is1, null, o2);
+		    return BitmapFactory.decodeStream(is1, null, o2);
 	    } catch (Exception e) {}
 	    return 	BitmapFactory.decodeResource(getResources(), R.drawable.nofloormap);
 	}
@@ -174,13 +209,13 @@ public class FloorplanView extends Activity {
 	    public BitmapWorkerTask(ImageView imageView) {
 	        // Use a WeakReference to ensure the ImageView can be garbage collected
 	        imageViewReference = new WeakReference<ImageView>(imageView);
+	        zoominButton.setVisibility(View.VISIBLE);
+			zoomoutButton.setVisibility(View.VISIBLE);
 	    }
 
 	    // Decode image in background.
-		protected Bitmap doInBackground(String... params) {
-	        Bitmap result=decodeInputStream(params[0]);
-	        int size=result.getByteCount();
-	        
+		protected Bitmap doInBackground(String... params) {	        
+		    Bitmap result=decodeInputStream(params[0]);
 	        return result;
 	    }
 	    
@@ -198,5 +233,19 @@ public class FloorplanView extends Activity {
 	            }
 	        }
 	    }
+	}
+	
+	public void zoominClick(View view)
+	{
+		if (scale>1 &&scale <=16)
+		scale/=2;
+		new BitmapWorkerTask(imageView).execute(getURL(APname));
+	}
+	
+	public void zoomoutClick(View view)
+	{
+		if (scale>=1 &&scale <16)
+		scale*=2;
+		new BitmapWorkerTask(imageView).execute(getURL(APname));
 	}
 }
