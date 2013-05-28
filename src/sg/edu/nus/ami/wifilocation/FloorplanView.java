@@ -5,15 +5,11 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.PrivateKey;
-
-import javax.security.auth.PrivateCredentialPermission;
 
 import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
-import android.R.string;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -26,13 +22,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.Toast;
-//import android.widget.ImageView;
-//import android.widget.ImageView.ScaleType;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -51,7 +45,6 @@ public class FloorplanView extends Activity {
 	// MyImageView imageView;
 	private ImageView imageView;
 	private Drawable floorplan;
-	private Bitmap bm_floorplan;
 	private ImageButton zoominButton;
 	// String bdg_floor;
 	private String APname;
@@ -163,9 +156,9 @@ public class FloorplanView extends Activity {
 			// The new size we want to scale to
 			final int REQUIRED_SIZE = 700;
 			// Find the correct scale value. It should be the power of 2.
-			while (o.outWidth / scale / 2 >= REQUIRED_SIZE
-					&& o.outHeight / scale / 2 >= REQUIRED_SIZE)
-				scale *= 2;
+			 final int heightRatio = Math.round((float) o.outWidth/ (float) REQUIRED_SIZE);
+			 final int widthRatio = Math.round((float) o.outHeight / (float) REQUIRED_SIZE);            
+			 scale = heightRatio < widthRatio ? heightRatio : widthRatio;
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -210,8 +203,6 @@ public class FloorplanView extends Activity {
 
 	class BitmapWorkerTask extends AsyncTask<String, Integer, Bitmap> {
 		private final WeakReference<ImageView> imageViewReference;
-		private int data = 0;
-
 		public BitmapWorkerTask(ImageView imageView) {
 			// Use a WeakReference to ensure the ImageView can be garbage
 			// collected
@@ -243,7 +234,7 @@ public class FloorplanView extends Activity {
 			}
 		}
 	}
-
+    
 	public void zoominClick(View view) {
 		if (scale > 1 && scale <=16) {
 			scale /= 2;
@@ -263,7 +254,6 @@ public class FloorplanView extends Activity {
 			toast.show();
 		}
 	}
-
 	public void zoomoutClick(View view) {
 		if (scale >= 1 && scale < 16) {
 			scale *= 2;
