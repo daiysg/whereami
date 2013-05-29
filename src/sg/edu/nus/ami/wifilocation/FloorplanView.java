@@ -27,7 +27,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -45,12 +49,17 @@ public class FloorplanView extends Activity {
 	private static final String DEBUG_TAG = "FloorplanView";
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 
-	MyImageView imageView;
-	Drawable floorplan;
+	private ImageView imageView;
+	private Drawable floorplan;
+	private ImageButton zoominButton;
+	private ImageButton zoomoutButton;
+	int scale = 4;
+	boolean scalemodified=false;
 	Bitmap bm_floorplan;
 	String APname;
 	double accuracy;
 	BroadcastReceiver locationReceiver;
+	
 	
 	Drawable[] layers; 
 	LayerDrawable ld;
@@ -58,9 +67,13 @@ public class FloorplanView extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 		Log.d(DEBUG_TAG, "floorplanview tab");
-		imageView = new MyImageView(getApplicationContext());
+		setContentView(R.layout.floorplanview);
+		imageView = (ImageView) findViewById(R.id.imageView_01);
+		zoominButton = (ImageButton) findViewById(R.id.zoomin);
+		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
+		zoominButton.setVisibility(View.GONE);
+		zoomoutButton.setVisibility(View.GONE);
 		layers = new Drawable[2];
 		ld = null;
 		
@@ -85,7 +98,6 @@ public class FloorplanView extends Activity {
 		imageView.setAdjustViewBounds(true);
 		imageView.setScaleType(ScaleType.MATRIX);
 		imageView.setOnTouchListener(new Touch());
-		setContentView(imageView);
 
 	}
 	
@@ -134,7 +146,7 @@ public class FloorplanView extends Activity {
 			String temp_APname = apLocation.getAp_name();
 			double temp_accuracy = apLocation.getAccuracy();
 			
-			if(APname == null ||!temp_APname.equals(APname)){
+			if(scalemodified||APname == null ||!temp_APname.equals(APname)){
 				APname = apLocation.getAp_name();
 				File file1 = getApplicationContext().getFileStreamPath(APname+".png");
 				Log.d(DEBUG_TAG, file1.getAbsolutePath());
@@ -156,12 +168,12 @@ public class FloorplanView extends Activity {
 				
 				try {
 					BitmapFactory.Options o1 = new BitmapFactory.Options();
-					o1.inSampleSize = 4;							
+					o1.inSampleSize = scale;							
 					Drawable d0 = BitmapDrawable.createFromResourceStream(getResources(), null, new FileInputStream(file1), null, o1);
 					
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
-					o.inSampleSize = 4;
+					o.inSampleSize = scale;
 					Bitmap bitmap;
 					bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
 					BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
@@ -169,6 +181,10 @@ public class FloorplanView extends Activity {
 					layers[1] = d;
 					
 					ld = new LayerDrawable(layers);
+					if (scalemodified){
+						scalemodified=false;
+					}
+				   
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
 					return null;
@@ -181,7 +197,7 @@ public class FloorplanView extends Activity {
 				try {
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
-					o.inSampleSize = 4;
+					o.inSampleSize = scale;
 					Bitmap bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
 					BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
 					layers[1] = d;
@@ -206,10 +222,52 @@ public class FloorplanView extends Activity {
 				imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
 			}else{
 				imageView.setImageDrawable(result);
+				zoominButton.setVisibility(View.VISIBLE);
+				zoomoutButton.setVisibility(View.VISIBLE);
 			}
 		}
 		
 	}
 	
+	public void zoominClick(View view) {
+		if (scale > 1 && scale <=16) {
+			scale /= 2;
+			Context context = getApplicationContext();
+			CharSequence text = "Zoom in!";
+			int duration = Toast.LENGTH_SHORT;
 
+			Toast toast = Toast.makeText(context, text, duration);
+			toast.show();
+			scalemodified=true;
+			//new UpdateFloorplanImageView().execute();
+		} else {
+			Context context = getApplicationContext();
+			CharSequence text = "You have reached the largest scale. Cannot zoom in!";
+			int duration = Toast.LENGTH_SHORT;
+
+			Toast toast = Toast.makeText(context, text, duration);
+			toast.show();	
+		}
+	}
+	public void zoomoutClick(View view) {
+		if (scale >= 1 && scale < 16) {
+			scale *= 2;
+			Context context = getApplicationContext();
+			CharSequence text = "Zoom out!";
+			int duration = Toast.LENGTH_SHORT;
+
+			Toast toast = Toast.makeText(context, text, duration);
+			toast.show();	
+			scalemodified=true;
+			//new UpdateFloorplanImageView().execute();
+		} else {
+			Context context = getApplicationContext();
+			CharSequence text = "You have reached the smallest scale. Cannot zoom out!";
+			int duration = Toast.LENGTH_SHORT;
+
+			Toast toast = Toast.makeText(context, text, duration);
+			toast.show();
+		}
+	}
+	 
 }
