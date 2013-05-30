@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <ImageView
+        android:id="@+id/imageView_01"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:adjustViewBounds="true"
+        android:scaleType="matrix"
+        android:src="@drawable/icon" />
+
+    <ImageButton
+        android:id="@+id/zoomout"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="27dp"
+        android:background="@drawable/zoomout"
+        android:onClick="zoomoutClick" />
+
+    <ImageButton
+        android:id="@+id/zoomin"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_above="@+id/zoomout"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="18dp"
+        android:background="@drawable/zoomin"
+        android:onClick="zoominClick" />
+
+</RelativeLayout>
