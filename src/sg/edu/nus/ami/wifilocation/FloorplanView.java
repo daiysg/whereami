@@ -20,6 +20,7 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -54,6 +55,7 @@ public class FloorplanView extends Activity {
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
 	int scale = 4;
+	int imagesize;
 	boolean scalemodified=false;
 	Bitmap bm_floorplan;
 	String APname;
@@ -70,6 +72,7 @@ public class FloorplanView extends Activity {
 		Log.d(DEBUG_TAG, "floorplanview tab");
 		setContentView(R.layout.floorplanview);
 		imageView = (ImageView) findViewById(R.id.imageView_01);
+		imageView.setBackgroundColor(Color.WHITE);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
 		zoominButton.setVisibility(View.GONE);
@@ -96,8 +99,9 @@ public class FloorplanView extends Activity {
 		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
-		imageView.setScaleType(ScaleType.MATRIX);
-		imageView.setOnTouchListener(new Touch());
+
+ 		
+		//imageView.setScaleType(ScaleType.FIT_XY);
 
 	}
 	
@@ -129,7 +133,8 @@ public class FloorplanView extends Activity {
 				client.AddParam("floorplan", floorplan);
 			client.Execute(RequestMethod.GET);
 			Log.d(DEBUG_TAG, client.getResponse());
-			return client.getResponse();
+			String result=client.getResponse();
+			return result;
 		}catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -170,12 +175,12 @@ public class FloorplanView extends Activity {
 					BitmapFactory.Options o1 = new BitmapFactory.Options();
 					o1.inSampleSize = scale;							
 					Drawable d0 = BitmapDrawable.createFromResourceStream(getResources(), null, new FileInputStream(file1), null, o1);
-					
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
-					Bitmap bitmap;
+					Bitmap bitmap = null;
 					bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
+					imagesize=bitmap.getByteCount();
 					BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
 					layers[0] = d0;
 					layers[1] = d;
@@ -220,10 +225,19 @@ public class FloorplanView extends Activity {
 			super.onPostExecute(result);
 			if(result == null){
 				imageView.setImageDrawable(getResources().getDrawable(R.drawable.nofloormap));
+				//imageView.setScaleType(ScaleType.FIT_XY);				
 			}else{
 				imageView.setImageDrawable(result);
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
+		 		imageView.setScaleType(ScaleType.MATRIX);
+		 		imageView.setOnTouchListener(new Touch());
+		 		Context context = getApplicationContext();
+				CharSequence text = "Scale:"+scale+" Size:"+imagesize/1024+"KB";
+				int duration = Toast.LENGTH_SHORT;
+
+				Toast toast = Toast.makeText(context, text, duration);
+				toast.show();	
 			}
 		}
 		
@@ -270,4 +284,9 @@ public class FloorplanView extends Activity {
 		}
 	}
 	 
+	public String changeResolution(String url)
+	{
+		String result1=url.replace("1790", "1290");
+		return result1.replace("1858","1458");
+	}
 }
