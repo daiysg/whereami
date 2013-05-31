@@ -12,6 +12,9 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
+import android.R.integer;
+import android.R.string;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -55,8 +58,10 @@ public class FloorplanView extends Activity {
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
 	int scale = 4;
-	int imagesize;
-	boolean scalemodified=false;
+	CharSequence height="1050";
+	CharSequence width="790";
+	int imagesize=0;
+	boolean scalemodified=true;
 	Bitmap bm_floorplan;
 	String APname;
 	double accuracy;
@@ -99,7 +104,7 @@ public class FloorplanView extends Activity {
 		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
-
+ 		imageView.setOnTouchListener(new Touch());
  		
 		//imageView.setScaleType(ScaleType.FIT_XY);
 
@@ -143,6 +148,7 @@ public class FloorplanView extends Activity {
 	
 	private class UpdateFloorplanImageView extends AsyncTask<APLocation, Void, LayerDrawable>{
 
+		@SuppressLint("NewApi")
 		@Override
 		protected LayerDrawable doInBackground(APLocation... params) {
 
@@ -154,14 +160,18 @@ public class FloorplanView extends Activity {
 			if(scalemodified||APname == null ||!temp_APname.equals(APname)){
 				APname = apLocation.getAp_name();
 				File file1 = getApplicationContext().getFileStreamPath(APname+".png");
-				Log.d(DEBUG_TAG, file1.getAbsolutePath());
+				Log.d(DEBUG_TAG, file1.getAbsolutePath());				
 				if(!file1.exists()){
 					Log.i(DEBUG_TAG, "file does not exist");
 					try {
+					    
 						file1.createNewFile();
-						Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(getURL(APname, null, null)).getContent());
+						String floormap=changeResolution(getURL(APname, null, null));
+						Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(floormap).getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
+						imagesize=bitmap.getByteCount();
 						bitmap.compress(CompressFormat.PNG, 0, fos);
+						bitmap.recycle();
 						fos.close();
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -173,23 +183,19 @@ public class FloorplanView extends Activity {
 				
 				try {
 					BitmapFactory.Options o1 = new BitmapFactory.Options();
-					o1.inSampleSize = scale;							
+					o1.inSampleSize = scale;		
 					Drawable d0 = BitmapDrawable.createFromResourceStream(getResources(), null, new FileInputStream(file1), null, o1);
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
 					Bitmap bitmap = null;
 					bitmap = BitmapFactory.decodeStream((InputStream) new URL(getURL(APname, String.valueOf(accuracy), null)).getContent(), null, o);
-					imagesize=bitmap.getByteCount();
+				
 					BitmapDrawable d = new BitmapDrawable(getResources(),bitmap);
 					layers[0] = d0;
 					layers[1] = d;
 					
 					ld = new LayerDrawable(layers);
-					if (scalemodified){
-						scalemodified=false;
-					}
-				   
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
 					return null;
@@ -231,13 +237,17 @@ public class FloorplanView extends Activity {
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
 		 		imageView.setScaleType(ScaleType.MATRIX);
-		 		imageView.setOnTouchListener(new Touch());
-		 		Context context = getApplicationContext();
-				CharSequence text = "Scale:"+scale+" Size:"+imagesize/1024+"KB";
-				int duration = Toast.LENGTH_SHORT;
+				if (scalemodified){
+					Context context = getApplicationContext();
+					//int finalsize=0;
+					int finalsize=imagesize/(scale*scale);
+					CharSequence text = "Resolution:"+height+"*"+width+"Scale:"+scale+" Size:"+finalsize/1024+"KB";
+					int duration = Toast.LENGTH_SHORT;
 
-				Toast toast = Toast.makeText(context, text, duration);
-				toast.show();	
+					Toast toast = Toast.makeText(context, text, duration);
+					toast.show();	
+					scalemodified=false;
+				}			   
 			}
 		}
 		
@@ -286,7 +296,7 @@ public class FloorplanView extends Activity {
 	 
 	public String changeResolution(String url)
 	{
-		String result1=url.replace("1790", "1290");
-		return result1.replace("1858","1458");
+		String result1=url.replace("1790", width);
+		return result1.replace("1858",height);
 	}
 }
