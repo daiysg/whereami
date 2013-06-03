@@ -58,9 +58,9 @@ public class FloorplanView extends Activity {
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
 	int scale = 4;
-	CharSequence height="1050";
-	CharSequence width="790";
-	int imagesize=0;
+	CharSequence height="1200";
+	CharSequence width="900";
+	//int imagesize=0;
 	boolean scalemodified=true;
 	Bitmap bm_floorplan;
 	String APname;
@@ -158,6 +158,7 @@ public class FloorplanView extends Activity {
 			double temp_accuracy = apLocation.getAccuracy();
 			
 			if(scalemodified||APname == null ||!temp_APname.equals(APname)){
+				
 				APname = apLocation.getAp_name();
 				File file1 = getApplicationContext().getFileStreamPath(APname+".png");
 				Log.d(DEBUG_TAG, file1.getAbsolutePath());				
@@ -169,9 +170,9 @@ public class FloorplanView extends Activity {
 						String floormap=changeResolution(getURL(APname, null, null));
 						Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(floormap).getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
-						imagesize=bitmap.getByteCount();
+						//imagesize=bitmap.getByteCount();
 						bitmap.compress(CompressFormat.PNG, 0, fos);
-						bitmap.recycle();
+						//bitmap.recycle();
 						fos.close();
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -239,8 +240,8 @@ public class FloorplanView extends Activity {
 		 		imageView.setScaleType(ScaleType.MATRIX);
 				if (scalemodified){
 					Context context = getApplicationContext();
-					//int finalsize=0;
-					int finalsize=imagesize/(scale*scale);
+					int finalsize=0;
+					//int finalsize=imagesize/(scale*scale);
 					CharSequence text = "Resolution:"+height+"*"+width+"Scale:"+scale+" Size:"+finalsize/1024+"KB";
 					int duration = Toast.LENGTH_SHORT;
 
