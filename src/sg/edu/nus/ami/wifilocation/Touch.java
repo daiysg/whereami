@@ -29,7 +29,6 @@ public class Touch implements OnTouchListener {
 
 	public boolean onTouch(View v, MotionEvent event) {  
 		ImageView view = (ImageView) v;  
-
 		// Handle touch events   
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {  
 		case MotionEvent.ACTION_DOWN:  

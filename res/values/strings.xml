@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, AndroidWifiLocationActivity!</string>
-    <string name="app_name">Where Am I</string>
+    <string name="app_name">Where Am I TEST </string>
     <string name="buttonLocation">MyLocation</string>
     <string name="buttonGoogleMap">Google Map</string>
     <string name="buttonFloorplan">Floorplan</string>

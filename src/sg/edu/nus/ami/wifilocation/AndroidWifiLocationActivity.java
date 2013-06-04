@@ -3,6 +3,7 @@ package sg.edu.nus.ami.wifilocation;
 import java.util.List;
 import java.util.Vector;
 
+import sg.edu.nus.ami.wifilocation.R;
 import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;

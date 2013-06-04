@@ -15,7 +15,7 @@
     <application android:icon="@drawable/icon" android:label="@string/app_name">
     
     
-        <activity android:name=".AndroidWifiLocationActivity"
+        <activity android:name="sg.edu.nus.ami.wifilocation.AndroidWifiLocationActivity"
                   android:label="@string/app_name"
                   android:launchMode="singleTop">
             <intent-filter>
@@ -30,7 +30,7 @@
                 <category android:name="android.intent.category.EMBED"></category>
             </intent-filter>
         </activity>
-        <activity android:name=".FloorplanView">
+        <activity android:name="sg.edu.nus.ami.wifilocation.FloorplanView">
             <intent-filter>
                 <action android:name="android.zoom"></action>
                 <category android:name="android.intent.category.EMBED"></category>
@@ -42,7 +42,7 @@
                 <category android:name="android.intent.category.LAUNCHER"></category>
             </intent-filter>
         </activity>
-        <service android:name=".api.ServiceLocation"></service>
+        <service android:name="sg.edu.nus.ami.wifilocation.api.ServiceLocation"></service>
 
     </application>
 
