@@ -7,5 +7,6 @@
     <string name="buttonFloorplan">Floorplan</string>
     <string name="textviewLocation">My Location</string>
     <string name="textviewLocationTitle">Current Location:</string>
+    <string name="tag">tag</string>
     
 </resources>

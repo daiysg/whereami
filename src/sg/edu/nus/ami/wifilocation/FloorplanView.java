@@ -13,6 +13,7 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
+import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -22,6 +23,7 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -30,6 +32,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
+import android.hardware.Camera.Size;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Process;
@@ -64,7 +67,7 @@ public class FloorplanView extends Activity {
 	int scale = 1;
 	CharSequence height = "1200";
 	CharSequence width = "900";
-	int imagesize = 0;
+	//int imagesize = 0;
 	boolean scalemodified = true;
 	Bitmap bm_floorplan;
 	String APname;
@@ -153,7 +156,7 @@ public class FloorplanView extends Activity {
 	private class UpdateFloorplanImageView extends
 			AsyncTask<APLocation, Void, LayerDrawable> {
 
-
+		@SuppressLint("NewApi")
 		@Override
 		protected LayerDrawable doInBackground(APLocation... params) {
 
@@ -179,12 +182,9 @@ public class FloorplanView extends Activity {
 								.decodeStream((InputStream) new URL(floormap)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
-						while (bitmap != null) {
-							imagesize = bitmap.getByteCount();
-							bitmap.compress(CompressFormat.PNG, 0, fos);
-							//bitmap.recycle();
-						}
+						bitmap.compress(CompressFormat.PNG, 0, fos);
 						fos.close();
+					    bitmap.recycle();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -204,12 +204,14 @@ public class FloorplanView extends Activity {
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
 					Bitmap bitmap = null;
+					String currentpoint = changeResolution(getURL(APname,
+							String.valueOf(accuracy), null));
 					bitmap = BitmapFactory.decodeStream((InputStream) new URL(
-							getURL(APname, String.valueOf(accuracy), null))
-							.getContent(), null, o);
+							currentpoint).getContent(), null, o);
 
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
+
 					layers[0] = d0;
 					layers[1] = d;
 
@@ -259,16 +261,36 @@ public class FloorplanView extends Activity {
 						R.drawable.nofloormap));
 				// imageView.setScaleType(ScaleType.FIT_XY);
 			} else {
-				imageView.setImageDrawable(result);
+
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
 				imageView.setScaleType(ScaleType.MATRIX);
-				//Drawable drawable = imageView.getDrawable();
-				//Rect imageBounds = drawable.getBounds();
-				
+				// Drawable drawable = imageView.getDrawable();
+				// Rect imageBounds = drawable.getBounds();
+				imageView.setImageDrawable(result);
+				Display display = getWindowManager().getDefaultDisplay();
+				Point size = new Point();
+				display.getSize(size);
+				Bitmap b = Bitmap.createBitmap(size.x,size.y,Bitmap.Config.ARGB_8888);
+				result.draw(new Canvas(b));
+				int imagesize=b.getByteCount();
+				/*
+				 * Matrix matrix=imageView.getMatrix(); RectF drawableRect = new
+				 * RectF(0, 0, imageView.getWidth(), imageView.getHeight());
+				 * RectF viewRect = new RectF(0, 0, size.x, size.y);
+				 * matrix.setRectToRect(drawableRect, viewRect,
+				 * Matrix.ScaleToFit.CENTER); imageView.setImageMatrix(matrix);
+				 */
+
 				if (scalemodified) {
+					
+					Matrix m = imageView.getImageMatrix();
+					RectF drawableRect = new RectF(0, 0, result.getIntrinsicWidth(), result.getIntrinsicHeight());
+					RectF viewRect = new RectF(0, 0, imageView.getWidth(), imageView.getHeight());
+					m.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+					imageView.setImageMatrix(m);
 					Context context = getApplicationContext();
-					// int finalsize=0;
+					// int finalsize
 					int finalsize = imagesize / (scale * scale);
 					CharSequence text = "Resolution:" + height + "*" + width
 							+ "Scale:" + scale + " Size:" + finalsize / 1024
