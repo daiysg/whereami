@@ -109,6 +109,7 @@ public class FloorplanView extends Activity {
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
 		imageView.setOnTouchListener(new Touch());
+		//compassView.setOnTouchListener(new Touch());
 		// imageView.setScaleType(ScaleType.FIT_XY);
 
 	}

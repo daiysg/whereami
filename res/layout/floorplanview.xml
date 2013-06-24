@@ -12,7 +12,6 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:adjustViewBounds="true"
-        android:scaleType="matrix"
         android:src="@drawable/icon" />
 
     <ImageButton
