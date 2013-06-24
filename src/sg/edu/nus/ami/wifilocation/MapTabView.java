@@ -2,8 +2,6 @@ package sg.edu.nus.ami.wifilocation;
 
 import java.util.List;
 
-import sg.edu.nus.ami.wifilocation.R;
-
 import android.graphics.drawable.Drawable;
 import android.location.LocationManager;
 import android.os.Bundle;

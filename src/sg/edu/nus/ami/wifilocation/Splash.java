@@ -1,6 +1,5 @@
 package sg.edu.nus.ami.wifilocation;
 
-import sg.edu.nus.ami.wifilocation.R;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;

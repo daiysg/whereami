@@ -8,12 +8,10 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import sg.edu.nus.ami.wifilocation.R;
 import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
-import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -23,23 +21,17 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
-import android.hardware.Camera.Size;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
@@ -64,10 +56,11 @@ public class FloorplanView extends Activity {
 	private Drawable floorplan;
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
+	private ImageView compassView;
 	int scale = 1;
 	CharSequence height = "1200";
-	CharSequence width = "900";
-	//int imagesize = 0;
+	CharSequence width = "1000";
+	int imagesize = 0;
 	boolean scalemodified = true;
 	Bitmap bm_floorplan;
 	String APname;
@@ -86,8 +79,11 @@ public class FloorplanView extends Activity {
 		imageView.setBackgroundColor(Color.WHITE);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
+		compassView=(ImageView) findViewById(R.id.compass);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
+		compassView.setVisibility(View.GONE);
+		
 		layers = new Drawable[2];
 		ld = null;
 
@@ -169,20 +165,22 @@ public class FloorplanView extends Activity {
 
 				APname = apLocation.getAp_name();
 				File file1 = getApplicationContext().getFileStreamPath(
-						APname + ".png");
+						APname + ".jpg");
 				Log.d(DEBUG_TAG, file1.getAbsolutePath());
 				if (!file1.exists()) {
 					Log.i(DEBUG_TAG, "file does not exist");
 					try {
 
 						file1.createNewFile();
-						String floormap = changeResolution(getURL(APname, null,
+						String floormapPng = changeResolution(getURL(APname, null,
 								null));
+						String floormap=floormapPng.replace("png","jpeg");
 						Bitmap bitmap = BitmapFactory
 								.decodeStream((InputStream) new URL(floormap)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
-						bitmap.compress(CompressFormat.PNG, 0, fos);
+						bitmap.compress(CompressFormat.JPEG, 0, fos);
+						imagesize=bitmap.getByteCount();
 						fos.close();
 					    bitmap.recycle();
 					} catch (IOException e) {
@@ -264,16 +262,11 @@ public class FloorplanView extends Activity {
 
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
+				compassView.setVisibility(View.VISIBLE);
 				imageView.setScaleType(ScaleType.MATRIX);
 				// Drawable drawable = imageView.getDrawable();
 				// Rect imageBounds = drawable.getBounds();
 				imageView.setImageDrawable(result);
-				Display display = getWindowManager().getDefaultDisplay();
-				Point size = new Point();
-				display.getSize(size);
-				Bitmap b = Bitmap.createBitmap(size.x,size.y,Bitmap.Config.ARGB_8888);
-				result.draw(new Canvas(b));
-				int imagesize=b.getByteCount();
 				/*
 				 * Matrix matrix=imageView.getMatrix(); RectF drawableRect = new
 				 * RectF(0, 0, imageView.getWidth(), imageView.getHeight());
@@ -351,5 +344,6 @@ public class FloorplanView extends Activity {
 	public String changeResolution(String url) {
 		String result1 = url.replace("1790", width);
 		return result1.replace("1858", height);
+		
 	}
 }

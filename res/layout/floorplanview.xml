@@ -35,4 +35,12 @@
         android:background="@drawable/zoomin"
         android:onClick="zoominClick" />
 
+    <ImageView
+        android:id="@+id/compass"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/zoomin"
+        android:src="@drawable/compass" />
+
 </RelativeLayout>
