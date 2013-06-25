@@ -1,22 +1,19 @@
 package sg.edu.nus.ami.wifilocation;
 
-import android.app.Activity;
 import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.os.Bundle;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.ImageView;
 
-public class Touch extends Activity implements OnTouchListener {
+public class Touch implements OnTouchListener {
 
 	// These matrices used to move and zoom image
 	private Matrix matrix = new Matrix();
 	private Matrix savedMatrix = new Matrix();
 
-	private ImageView compassImageView;
 	// 3 states
 	private static final int NONE = 0;
 	private static final int DRAG = 1;
@@ -30,12 +27,6 @@ public class Touch extends Activity implements OnTouchListener {
 	private float newRot = 0f;
 	private float[] lastEvent = null;
 	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-	    super.onCreate(savedInstanceState);
-	    	compassImageView=(ImageView) findViewById(R.id.compass);
-	    	
-	}
 	
 	public boolean onTouch(View v, MotionEvent event) {
 		ImageView view = (ImageView) v;
