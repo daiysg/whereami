@@ -52,27 +52,28 @@ import com.google.gson.GsonBuilder;
  * @author qinfeng
  * 
  */
-public class FloorplanView extends Activity implements OnTouchListener{
+public class FloorplanView extends Activity implements OnTouchListener {
 	private static final String DEBUG_TAG = "FloorplanView";
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
 	// These matrices used to move and zoom image
-		private Matrix matrix = new Matrix();
-		private Matrix savedMatrix = new Matrix();
+	private Matrix floorMatrix = new Matrix();
+	private Matrix compassMatrix = new Matrix();
+	private Matrix savedFloorMatrix = new Matrix();
+	private Matrix savedCompassMatrix = new Matrix();
 
-		// 3 states
-		private static final int NONE = 0;
-		private static final int DRAG = 1;
-		private static final int ZOOM = 2;
-		private int mode = NONE;
-		// Remember some things for zooming
-		private PointF start = new PointF();
-		private PointF mid = new PointF();
-		private float oldDist = 1f;
-		private float d = 0f;
-		private float newRot = 0f;
-		private float[] lastEvent = null;
-		
-		
+	// 3 states
+	private static final int NONE = 0;
+	private static final int DRAG = 1;
+	private static final int ZOOM = 2;
+	private int mode = NONE;
+	// Remember some things for zooming
+	private PointF start = new PointF();
+	private PointF mid = new PointF();
+	private float oldDist = 1f;
+	private float d = 0f;
+	private float newRot = 0f;
+	private float[] lastEvent = null;
+
 	private ImageView imageView;
 	private Drawable floorplan;
 	private ImageButton zoominButton;
@@ -100,11 +101,11 @@ public class FloorplanView extends Activity implements OnTouchListener{
 		imageView.setBackgroundColor(Color.WHITE);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
-		compassView=(ImageView) findViewById(R.id.compass);
+		compassView = (ImageView) findViewById(R.id.compass);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
 		compassView.setVisibility(View.GONE);
-		
+
 		layers = new Drawable[2];
 		ld = null;
 
@@ -129,7 +130,14 @@ public class FloorplanView extends Activity implements OnTouchListener{
 		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
-		//imageView.setOnTouchListener(new Touch());
+		floorMatrix.setTranslate(1f, 1f);
+		imageView.setImageMatrix(floorMatrix);
+		float scale=(float) 0.4;
+		    compassMatrix.setScale(scale, scale);
+
+		compassView.setImageMatrix(compassMatrix);
+		imageView.setOnTouchListener(this);
+		// imageView.setOnTouchListener(new Touch());
 		// imageView.setScaleType(ScaleType.FIT_XY);
 
 	}
@@ -193,17 +201,17 @@ public class FloorplanView extends Activity implements OnTouchListener{
 					try {
 
 						file1.createNewFile();
-						String floormapPng = changeResolution(getURL(APname, null,
-								null));
-						String floormap=floormapPng.replace("png","jpeg");
+						String floormapPng = changeResolution(getURL(APname,
+								null, null));
+						String floormap = floormapPng.replace("png", "jpeg");
 						Bitmap bitmap = BitmapFactory
 								.decodeStream((InputStream) new URL(floormap)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
 						bitmap.compress(CompressFormat.JPEG, 0, fos);
-						imagesize=bitmap.getByteCount();
+						imagesize = bitmap.getByteCount();
 						fos.close();
-					    bitmap.recycle();
+						bitmap.recycle();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -285,23 +293,22 @@ public class FloorplanView extends Activity implements OnTouchListener{
 				zoomoutButton.setVisibility(View.VISIBLE);
 				compassView.setVisibility(View.VISIBLE);
 				imageView.setScaleType(ScaleType.MATRIX);
+				compassView.setScaleType(ScaleType.MATRIX);
+
 				// Drawable drawable = imageView.getDrawable();
 				// Rect imageBounds = drawable.getBounds();
 				imageView.setImageDrawable(result);
-				/*
-				 * Matrix matrix=imageView.getMatrix(); RectF drawableRect = new
-				 * RectF(0, 0, imageView.getWidth(), imageView.getHeight());
-				 * RectF viewRect = new RectF(0, 0, size.x, size.y);
-				 * matrix.setRectToRect(drawableRect, viewRect,
-				 * Matrix.ScaleToFit.CENTER); imageView.setImageMatrix(matrix);
-				 */
 
 				if (scalemodified) {
-					
+
 					Matrix m = imageView.getImageMatrix();
-					RectF drawableRect = new RectF(0, 0, result.getIntrinsicWidth(), result.getIntrinsicHeight());
-					RectF viewRect = new RectF(0, 0, imageView.getWidth(), imageView.getHeight());
-					m.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+					RectF drawableRect = new RectF(0, 0,
+							result.getIntrinsicWidth(),
+							result.getIntrinsicHeight());
+					RectF viewRect = new RectF(0, 0, imageView.getWidth(),
+							imageView.getHeight());
+					m.setRectToRect(drawableRect, viewRect,
+							Matrix.ScaleToFit.CENTER);
 					imageView.setImageMatrix(m);
 					Context context = getApplicationContext();
 					// int finalsize
@@ -365,16 +372,18 @@ public class FloorplanView extends Activity implements OnTouchListener{
 	public String changeResolution(String url) {
 		String result1 = url.replace("1790", width);
 		return result1.replace("1858", height);
-		
+
 	}
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		// TODO Auto-generated method stub
 		// Handle touch events
+
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {
 		case MotionEvent.ACTION_DOWN:
-			savedMatrix.set(matrix);
+			savedFloorMatrix.set(floorMatrix);
+			savedCompassMatrix.set(compassMatrix);
 			start.set(event.getX(), event.getY());
 			mode = DRAG;
 			lastEvent = null;
@@ -382,7 +391,8 @@ public class FloorplanView extends Activity implements OnTouchListener{
 		case MotionEvent.ACTION_POINTER_DOWN:
 			oldDist = spacing(event);
 			if (oldDist > 10f) {
-				savedMatrix.set(matrix);
+				savedFloorMatrix.set(floorMatrix);
+				savedCompassMatrix.set(compassMatrix);
 				midPoint(mid, event);
 				mode = ZOOM;
 			}
@@ -401,37 +411,42 @@ public class FloorplanView extends Activity implements OnTouchListener{
 		case MotionEvent.ACTION_MOVE:
 			if (mode == DRAG) {
 				// ...
-				matrix.set(savedMatrix);
+				floorMatrix.set(savedFloorMatrix);
 				float dx = event.getX() - start.x;
 				float dy = event.getY() - start.y;
-				matrix.postTranslate(dx, dy);
+				floorMatrix.postTranslate(dx, dy);
 			} else if (mode == ZOOM) {
 				float newDist = spacing(event);
 				if (newDist > 10f) {
-					matrix.set(savedMatrix);
+					floorMatrix.set(savedFloorMatrix);
 					float scale = newDist / oldDist;
-					matrix.postScale(scale, scale, mid.x, mid.y);
+					floorMatrix.postScale(scale, scale, mid.x, mid.y);
 				}
-				if (lastEvent != null ) {
+
+				if (lastEvent != null) {
 					newRot = rotation(event);
 					float r = newRot - d;
 					float[] values = new float[9];
-					matrix.getValues(values);
+					floorMatrix.getValues(values);
 					float tx = values[2];
 					float ty = values[5];
 					float sx = values[0];
 					float xc = (imageView.getWidth() / 2) * sx;
+					float xc1 = (compassView.getWidth() / 2) * sx;
 					float yc = (imageView.getHeight() / 2) * sx;
-					matrix.postRotate(r, tx + xc, ty + yc);
-					}
+					float yc1 = (compassView.getHeight() / 2) * sx;
+					floorMatrix.postRotate(r, tx + xc, ty + yc);
+					compassMatrix.postRotate(r, tx + xc1, ty + yc1);
+					compassView.setImageMatrix(compassMatrix);
+				}
 			}
 			break;
 		}
 
-		imageView.setImageMatrix(matrix);
+		imageView.setImageMatrix(floorMatrix);
 		return true; // indicate event was handled
 	}
-	
+
 	/** Determine the space between the first two fingers */
 	private float spacing(MotionEvent event) {
 		float x = event.getX(0) - event.getX(1);
@@ -451,7 +466,7 @@ public class FloorplanView extends Activity implements OnTouchListener{
 	 * 
 	 * @param event
 	 * @return Degrees
-	 */	
+	 */
 	private float rotation(MotionEvent event) {
 		double delta_x = (event.getX(0) - event.getX(1));
 		double delta_y = (event.getY(0) - event.getY(1));
