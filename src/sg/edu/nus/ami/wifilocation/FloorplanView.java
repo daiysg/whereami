@@ -12,6 +12,7 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
+import android.R.anim;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -72,8 +73,9 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private float oldDist = 1f;
 	private float d = 0f;
 	private float newRot = 0f;
-	private float[] lastEvent = null;
-
+	private float[] floorLastEvent = null;
+    private float[] compassLastEvent= null;
+	
 	private ImageView imageView;
 	private Drawable floorplan;
 	private ImageButton zoominButton;
@@ -132,7 +134,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		imageView.setAdjustViewBounds(true);
 		floorMatrix.setTranslate(1f, 1f);
 		imageView.setImageMatrix(floorMatrix);
-		float scale=(float) 0.4;
+		float scale=(float) 0.45;
 		    compassMatrix.setScale(scale, scale);
 
 		compassView.setImageMatrix(compassMatrix);
@@ -386,7 +388,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			savedCompassMatrix.set(compassMatrix);
 			start.set(event.getX(), event.getY());
 			mode = DRAG;
-			lastEvent = null;
+			floorLastEvent = null;
+			compassLastEvent=null;
 			break;
 		case MotionEvent.ACTION_POINTER_DOWN:
 			oldDist = spacing(event);
@@ -396,17 +399,24 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				midPoint(mid, event);
 				mode = ZOOM;
 			}
-			lastEvent = new float[4];
-			lastEvent[0] = event.getX(0);
-			lastEvent[1] = event.getX(1);
-			lastEvent[2] = event.getY(0);
-			lastEvent[3] = event.getY(1);
+			floorLastEvent = new float[4];
+			floorLastEvent[0] = event.getX(0);
+			floorLastEvent[1] = event.getX(1);
+			floorLastEvent[2] = event.getY(0);
+			floorLastEvent[3] = event.getY(1);
+			compassLastEvent=new float[4];
+			compassLastEvent[0] = event.getX(0);
+			compassLastEvent[1] = event.getX(1);
+			compassLastEvent[2] = event.getY(0);
+			compassLastEvent[3] = event.getY(1);
+			
 			d = rotation(event);
 			break;
 		case MotionEvent.ACTION_UP:
 		case MotionEvent.ACTION_POINTER_UP:
 			mode = NONE;
-			lastEvent = null;
+			floorLastEvent = null;
+			compassLastEvent=null;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			if (mode == DRAG) {
@@ -423,20 +433,27 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					floorMatrix.postScale(scale, scale, mid.x, mid.y);
 				}
 
-				if (lastEvent != null) {
+				if (floorLastEvent != null ) {
+					
 					newRot = rotation(event);
 					float r = newRot - d;
-					float[] values = new float[9];
-					floorMatrix.getValues(values);
-					float tx = values[2];
-					float ty = values[5];
-					float sx = values[0];
+					/*float[] floorValues = new float[9];
+					float[] compassValues=new float[9];
+					floorMatrix.getValues(floorValues);
+					compassMatrix.getValues(compassValues);					
+	                float tx = floorValues[2];
+					float tx1= compassValues[2];
+					float ty = floorValues[5];
+					float ty1= compassValues[5];
+					float sx = floorValues[0];
+					float sx1= compassValues[0];
 					float xc = (imageView.getWidth() / 2) * sx;
-					float xc1 = (compassView.getWidth() / 2) * sx;
+					float xc1 = (compassView.getWidth() / 2);
 					float yc = (imageView.getHeight() / 2) * sx;
-					float yc1 = (compassView.getHeight() / 2) * sx;
-					floorMatrix.postRotate(r, tx + xc, ty + yc);
-					compassMatrix.postRotate(r, tx + xc1, ty + yc1);
+					float yc1 = (compassView.getHeight() / 2) * sx1;*/
+					
+					floorMatrix.postRotate(r, imageView.getWidth() / 2, imageView.getHeight() / 2);
+					compassMatrix.postRotate(r, compassView.getWidth()/2, compassView.getHeight()/2);
 					compassView.setImageMatrix(compassMatrix);
 				}
 			}
