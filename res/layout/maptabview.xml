@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
@@ -20,26 +19,3 @@
  
     
 </RelativeLayout>
-=======
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:id="@+id/maptablayout"
-  android:orientation="vertical"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent">
-<com.google.android.maps.MapView
-  android:id="@+id/mapview"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent"
-  android:clickable="true"
-  android:apiKey="AIzaSyAhxBxi6rhM6-R_vYtYlWnrgqvs-E6bid4"  />
- 
- <!-- daiyuan's debug apikey: android:apiKey="AIzaSyAhxBxi6rhM6-R_vYtYlWnrgqvs-E6bid4" -->
-  <!-- qinfeng's debug apikey: android:apiKey="0WHA06lDEPfMgAFfK8jL4oS5kk5UX4HBOsaqQbw" -->
-  <!-- qinfeng's production apikey: android:apiKey="0WHA06lDEPfPx2ILrAhQMkl2QWqnqctAz2SaO_g" -->
-  <!-- jianbin's debug apikey: android:apiKey="0fTjs5zDwwh8QFyP2u8-hrsDrzDziFJCi8mQGZQ" -->
- 
-    
-</RelativeLayout>
->>>>>>> bdd973fdb4d6fbbf9246ab45b0a8a3c5bfc2b34c
