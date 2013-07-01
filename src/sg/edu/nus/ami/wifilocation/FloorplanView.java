@@ -13,6 +13,7 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
+import android.R.anim;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -24,6 +25,7 @@ import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -31,8 +33,11 @@ import android.graphics.drawable.LayerDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Process;
+import android.util.FloatMath;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
@@ -49,9 +54,28 @@ import com.google.gson.GsonBuilder;
  * @author qinfeng
  * 
  */
-public class FloorplanView extends Activity {
+public class FloorplanView extends Activity implements OnTouchListener {
 	private static final String DEBUG_TAG = "FloorplanView";
 	private static final String Baseurl = "http://nuslivinglab.nus.edu.sg";
+	// These matrices used to move and zoom image
+	private Matrix floorMatrix = new Matrix();
+	private Matrix compassMatrix = new Matrix();
+	private Matrix savedFloorMatrix = new Matrix();
+	private Matrix savedCompassMatrix = new Matrix();
+
+	// 3 states
+	private static final int NONE = 0;
+	private static final int DRAG = 1;
+	private static final int ZOOM = 2;
+	private int mode = NONE;
+	// Remember some things for zooming
+	private PointF start = new PointF();
+	private PointF mid = new PointF();
+	private float oldDist = 1f;
+	private float d = 0f;
+	private float newRot = 0f;
+	private float[] floorLastEvent = null;
+	private float[] compassLastEvent = null;
 
 	private ImageView imageView;
 	private Drawable floorplan;
@@ -80,11 +104,11 @@ public class FloorplanView extends Activity {
 		imageView.setBackgroundColor(Color.WHITE);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
-		compassView=(ImageView) findViewById(R.id.compass);
+		compassView = (ImageView) findViewById(R.id.compass);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
 		compassView.setVisibility(View.GONE);
-		
+
 		layers = new Drawable[2];
 		ld = null;
 
@@ -109,7 +133,14 @@ public class FloorplanView extends Activity {
 		floorplan = getResources().getDrawable(R.drawable.gettingfloormap);
 		imageView.setImageDrawable(floorplan);
 		imageView.setAdjustViewBounds(true);
-		imageView.setOnTouchListener(new Touch());
+		floorMatrix.setTranslate(1f, 1f);
+		imageView.setImageMatrix(floorMatrix);
+		float scale = (float) 0.45;
+		compassMatrix.setScale(scale, scale);
+
+		compassView.setImageMatrix(compassMatrix);
+		imageView.setOnTouchListener(this);
+		// imageView.setOnTouchListener(new Touch());
 		// imageView.setScaleType(ScaleType.FIT_XY);
 
 	}
@@ -173,17 +204,17 @@ public class FloorplanView extends Activity {
 					try {
 
 						file1.createNewFile();
-						String floormapPng = changeResolution(getURL(APname, null,
-								null));
-						String floormap=floormapPng.replace("png","jpeg");
+						String floormapPng = changeResolution(getURL(APname,
+								null, null));
+						String floormap = floormapPng.replace("png", "jpeg");
 						Bitmap bitmap = BitmapFactory
 								.decodeStream((InputStream) new URL(floormap)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
 						bitmap.compress(CompressFormat.JPEG, 0, fos);
-						imagesize=bitmap.getByteCount();
+						imagesize = bitmap.getByteCount();
 						fos.close();
-					    bitmap.recycle();
+						bitmap.recycle();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -265,23 +296,22 @@ public class FloorplanView extends Activity {
 				zoomoutButton.setVisibility(View.VISIBLE);
 				compassView.setVisibility(View.VISIBLE);
 				imageView.setScaleType(ScaleType.MATRIX);
+				compassView.setScaleType(ScaleType.MATRIX);
+
 				// Drawable drawable = imageView.getDrawable();
 				// Rect imageBounds = drawable.getBounds();
 				imageView.setImageDrawable(result);
-				/*
-				 * Matrix matrix=imageView.getMatrix(); RectF drawableRect = new
-				 * RectF(0, 0, imageView.getWidth(), imageView.getHeight());
-				 * RectF viewRect = new RectF(0, 0, size.x, size.y);
-				 * matrix.setRectToRect(drawableRect, viewRect,
-				 * Matrix.ScaleToFit.CENTER); imageView.setImageMatrix(matrix);
-				 */
 
 				if (scalemodified) {
-					
+
 					Matrix m = imageView.getImageMatrix();
-					RectF drawableRect = new RectF(0, 0, result.getIntrinsicWidth(), result.getIntrinsicHeight());
-					RectF viewRect = new RectF(0, 0, imageView.getWidth(), imageView.getHeight());
-					m.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+					RectF drawableRect = new RectF(0, 0,
+							result.getIntrinsicWidth(),
+							result.getIntrinsicHeight());
+					RectF viewRect = new RectF(0, 0, imageView.getWidth(),
+							imageView.getHeight());
+					m.setRectToRect(drawableRect, viewRect,
+							Matrix.ScaleToFit.CENTER);
 					imageView.setImageMatrix(m);
 					Context context = getApplicationContext();
 					// int finalsize
@@ -345,7 +375,113 @@ public class FloorplanView extends Activity {
 	public String changeResolution(String url) {
 		String result1 = url.replace("1790", width);
 		return result1.replace("1858", height);
-		
+
+	}
+
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		// TODO Auto-generated method stub
+		// Handle touch events
+
+		switch (event.getAction() & MotionEvent.ACTION_MASK) {
+		case MotionEvent.ACTION_DOWN:
+			savedFloorMatrix.set(floorMatrix);
+			savedCompassMatrix.set(compassMatrix);
+			start.set(event.getX(), event.getY());
+			mode = DRAG;
+			floorLastEvent = null;
+			compassLastEvent = null;
+			break;
+		case MotionEvent.ACTION_POINTER_DOWN:
+			oldDist = spacing(event);
+			if (oldDist > 10f) {
+				savedFloorMatrix.set(floorMatrix);
+				savedCompassMatrix.set(compassMatrix);
+				midPoint(mid, event);
+				mode = ZOOM;
+			}
+			floorLastEvent = new float[4];
+			floorLastEvent[0] = event.getX(0);
+			floorLastEvent[1] = event.getX(1);
+			floorLastEvent[2] = event.getY(0);
+			floorLastEvent[3] = event.getY(1);
+			compassLastEvent = new float[4];
+			compassLastEvent[0] = event.getX(0);
+			compassLastEvent[1] = event.getX(1);
+			compassLastEvent[2] = event.getY(0);
+			compassLastEvent[3] = event.getY(1);
+
+			d = rotation(event);
+			break;
+		case MotionEvent.ACTION_UP:
+		case MotionEvent.ACTION_POINTER_UP:
+			mode = NONE;
+			floorLastEvent = null;
+			compassLastEvent = null;
+			break;
+		case MotionEvent.ACTION_MOVE:
+			if (mode == DRAG) {
+				// ...
+				floorMatrix.set(savedFloorMatrix);
+				float dx = event.getX() - start.x;
+				float dy = event.getY() - start.y;
+				floorMatrix.postTranslate(dx, dy);
+			} else if (mode == ZOOM) {
+				float newDist = spacing(event);
+				if (newDist > 10f) {
+					floorMatrix.set(savedFloorMatrix);
+					float scale = newDist / oldDist;
+					floorMatrix.postScale(scale, scale, mid.x, mid.y);
+				}
+
+				if (floorLastEvent != null && compassLastEvent!=null) {					
+
+					newRot = rotation(event);
+					float r = newRot - d;
+                    Log.d("rotation angle", Float.toString(r)); 
+                    
+					floorMatrix.postRotate(r, imageView.getWidth() / 2,
+							imageView.getHeight() / 2);
+					compassMatrix.postRotate(r, compassView.getWidth() / 2,
+								compassView.getHeight() / 2);		
+					r=0;
+				}
+			}
+			break;
+		}
+
+		compassView.setImageMatrix(compassMatrix);
+		Log.d("rotation angle", "compassmatrxi rotate");		
+		imageView.setImageMatrix(floorMatrix);
+		Log.d("rotation angle", "floormatrix rotate");		
+		return true; // indicate event was handled
+	}
+
+	/** Determine the space between the first two fingers */
+	private float spacing(MotionEvent event) {
+		float x = event.getX(0) - event.getX(1);
+		float y = event.getY(0) - event.getY(1);
+		return FloatMath.sqrt(x * x + y * y);
+	}
+
+	/** Calculate the mid point of the first two fingers */
+	private void midPoint(PointF point, MotionEvent event) {
+		float x = event.getX(0) + event.getX(1);
+		float y = event.getY(0) + event.getY(1);
+		point.set(x / 2, y / 2);
+	}
+
+	/**
+	 * Calculate the degree to be rotated by.
+	 * 
+	 * @param event
+	 * @return Degrees
+	 */
+	private float rotation(MotionEvent event) {
+		double delta_x = (event.getX(0) - event.getX(1));
+		double delta_y = (event.getY(0) - event.getY(1));
+		double radians = Math.atan2(delta_y, delta_x);
+		return (float) Math.toDegrees(radians);
 	}
 }
 =======
