@@ -12,7 +12,6 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
-import android.R.anim;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -72,7 +71,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private PointF mid = new PointF();
 	private float oldDist = 1f;
 	private float d = 0f;
-	private float newRot = 0f;
 	private float[] floorLastEvent = null;
 	private float[] compassLastEvent = null;
 
@@ -150,7 +148,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		filter.addAction(ServiceLocation.BROADCAST_ACTION);
 		registerReceiver(locationReceiver, filter);
 		Log.d(DEBUG_TAG, "onResume, register locationrecevier");
-
 	}
 
 	public void onPause() {
@@ -425,7 +422,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				float dx = event.getX() - start.x;
 				float dy = event.getY() - start.y;
 				floorMatrix.postTranslate(dx, dy);
-			} else if (mode == ZOOM) {
+			} else if (mode == ZOOM) {				
 				float newDist = spacing(event);
 				if (newDist > 10f) {
 					floorMatrix.set(savedFloorMatrix);
@@ -433,24 +430,26 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					floorMatrix.postScale(scale, scale, mid.x, mid.y);
 				}
 
-				if (floorLastEvent != null && compassLastEvent!=null) {					
-
+				if (floorLastEvent != null) {					
+					float newRot = 0f;
 					newRot = rotation(event);
 					float r = newRot - d;
                     Log.d("rotation angle", Float.toString(r)); 
                     
 					floorMatrix.postRotate(r, imageView.getWidth() / 2,
 							imageView.getHeight() / 2);
+					if (compassLastEvent!=null)
+					{
 					compassMatrix.postRotate(r, compassView.getWidth() / 2,
-								compassView.getHeight() / 2);		
-					r=0;
-				}
+								compassView.getHeight() / 2);
+					}
+				}				
 			}
 			break;
 		}
 
-		compassView.setImageMatrix(compassMatrix);
-		Log.d("rotation angle", "compassmatrxi rotate");		
+	    compassView.setImageMatrix(compassMatrix);
+    	Log.d("rotation angle", "compassmatrix rotate");		
 		imageView.setImageMatrix(floorMatrix);
 		Log.d("rotation angle", "floormatrix rotate");		
 		return true; // indicate event was handled
