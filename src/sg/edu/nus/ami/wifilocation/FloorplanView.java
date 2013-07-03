@@ -430,28 +430,35 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					floorMatrix.postScale(scale, scale, mid.x, mid.y);
 				}
 
-				if (floorLastEvent != null) {					
+				if (floorLastEvent != null) {	
+					Log.d("rotation", "rotation");
 					float newRot = 0f;
 					newRot = rotation(event);
 					float r = newRot - d;
-                    Log.d("rotation angle", Float.toString(r)); 
+					Log.d("rotationvalue","rotation value"+" "+Float.toString(r));
                     
 					floorMatrix.postRotate(r, imageView.getWidth() / 2,
-							imageView.getHeight() / 2);
+							imageView.getHeight() / 2);		
+					float[] values3=new float[9];
+					floorMatrix.getValues(values3);
+					Log.d("image rotation value", "floatrotation original"+" "+" "+Float.toString(values3[0])+" "+" "+Float.toString(values3[1])+" "+" "+Float.toString(values3[2])+" "+" "+Float.toString(values3[3])+" "+" "+Float.toString(values3[4])+" "+" "+Float.toString(values3[5])+" "+" "+Float.toString(values3[6]));	    					
 					if (compassLastEvent!=null)
 					{
-					compassMatrix.postRotate(r, compassView.getWidth() / 2,
+						float[] values4=new float[9];
+						compassMatrix.postRotate(r, compassView.getWidth() / 2,
 								compassView.getHeight() / 2);
+						compassMatrix.getValues(values4);
+						Log.d("image rotation value", "compassrotation original"+" "+Float.toString(values4[0])+" "+" "+Float.toString(values4[1])+" "+Float.toString(values4[2])+" "+Float.toString(values4[3])+" "+Float.toString(values4[4])+" "+Float.toString(values4[5])+" "+Float.toString(values4[6]));	    					
+					
 					}
 				}				
 			}
 			break;
 		}
 
-	    compassView.setImageMatrix(compassMatrix);
-    	Log.d("rotation angle", "compassmatrix rotate");		
+		compassView.setImageMatrix(compassMatrix);			
+    
 		imageView.setImageMatrix(floorMatrix);
-		Log.d("rotation angle", "floormatrix rotate");		
 		return true; // indicate event was handled
 	}
 
