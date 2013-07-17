@@ -72,8 +72,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private float oldDist = 1f;
 	private float d = 0f;
 	private float[] floorLastEvent = null;
-	private float[] compassLastEvent = null;
-
 	private ImageView imageView;
 	private Drawable floorplan;
 	private ImageButton zoominButton;
@@ -137,10 +135,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 		compassView.setImageMatrix(compassMatrix);
 		imageView.setOnTouchListener(this);
-		//compassView.setOnTouchListener(this);
-		// imageView.setOnTouchListener(new Touch());
-		// imageView.setScaleType(ScaleType.FIT_XY);
-
 	}
 
 	public void onResume() {
@@ -230,6 +224,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
+					
 					Bitmap bitmap = null;
 					String currentpoint = changeResolution(getURL(APname,
 							String.valueOf(accuracy), null));
@@ -264,6 +259,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
 					layers[1] = d;
+				
 					ld = new LayerDrawable(layers);
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
@@ -286,7 +282,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			if (result == null) {
 				imageView.setImageDrawable(getResources().getDrawable(
 						R.drawable.nofloormap));
-				// imageView.setScaleType(ScaleType.FIT_XY);
 			} else {
 
 				zoominButton.setVisibility(View.VISIBLE);
@@ -295,8 +290,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				imageView.setScaleType(ScaleType.MATRIX);
 				compassView.setScaleType(ScaleType.MATRIX);
 
-				// Drawable drawable = imageView.getDrawable();
-				// Rect imageBounds = drawable.getBounds();
 				imageView.setImageDrawable(result);
 
 				if (scalemodified) {
@@ -337,7 +330,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			Toast toast = Toast.makeText(context, text, duration);
 			toast.show();
 			scalemodified = true;
-			// new UpdateFloorplanImageView().execute();
 		} else {
 			Context context = getApplicationContext();
 			CharSequence text = "You have reached the largest scale. Cannot zoom in!";
@@ -358,7 +350,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			Toast toast = Toast.makeText(context, text, duration);
 			toast.show();
 			scalemodified = true;
-			// new UpdateFloorplanImageView().execute();
 		} else {
 			Context context = getApplicationContext();
 			CharSequence text = "You have reached the smallest scale. Cannot zoom out!";
@@ -389,7 +380,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			start.set(event.getX(), event.getY());
 			mode = DRAG;
 			floorLastEvent = null;
-			compassLastEvent = null;
 			break;
 		case MotionEvent.ACTION_POINTER_DOWN:
 			oldDist = spacing(event);
@@ -411,7 +401,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		case MotionEvent.ACTION_POINTER_UP:
 			mode = NONE;
 			floorLastEvent = null;
-			compassLastEvent = null;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			if (mode == DRAG) {
