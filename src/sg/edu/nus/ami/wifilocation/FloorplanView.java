@@ -12,6 +12,8 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
+import android.R.integer;
+import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -36,6 +38,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
@@ -77,11 +81,13 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
 	private ImageView compassView;
-	int scale = 1;
-	CharSequence height = "1200";
-	CharSequence width = "1000";
-	int imagesize = 0;
-	boolean scalemodified = true;
+	private CheckBox locationLockCheckbox;
+	private EditText buildingEditText;
+	private EditText floorEditText;
+	private EditText apEditText;
+	private int scale = 1;
+	private boolean scalemodified = true;
+	private boolean locationlocked=false;
 	Bitmap bm_floorplan;
 	String APname;
 	double accuracy;
@@ -97,12 +103,19 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		setContentView(R.layout.floorplanview);
 		imageView = (ImageView) findViewById(R.id.imageView_01);
 		imageView.setBackgroundColor(Color.WHITE);
+		locationLockCheckbox= (CheckBox) findViewById(R.id.LocationLock1);
+		locationLockCheckbox.setChecked(false);
+		locationLockCheckbox.setTextColor(Color.BLACK);
+		buildingEditText=(EditText) findViewById(R.id.buidlingname);
+		floorEditText=(EditText) findViewById(R.id.floorname);
+		apEditText=(EditText)findViewById(R.id.apName);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
 		compassView = (ImageView) findViewById(R.id.compass);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
 		compassView.setVisibility(View.GONE);
+		
 
 		layers = new Drawable[2];
 		ld = null;
@@ -184,11 +197,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			String temp_APname = apLocation.getAp_name();
 			double temp_accuracy = apLocation.getAccuracy();
 
-			if (scalemodified || APname == null || !temp_APname.equals(APname)) {
+			if (scalemodified || locationlocked || APname == null || !temp_APname.equals(APname)) {
 
-				APname = apLocation.getAp_name();
+				if (locationlocked==false)
+				{
+				   APname = apLocation.getAp_name();
+				}
 				File file1 = getApplicationContext().getFileStreamPath(
-						APname + ".jpg");
+						APname + ".png");
 				Log.d(DEBUG_TAG, file1.getAbsolutePath());
 				if (!file1.exists()) {
 					Log.i(DEBUG_TAG, "file does not exist");
@@ -197,13 +213,12 @@ public class FloorplanView extends Activity implements OnTouchListener {
 						file1.createNewFile();
 						String floormapPng = changeResolution(getURL(APname,
 								null, null));
-						String floormap = floormapPng.replace("png", "jpeg");
+						//String floormap = floormapPng.replace("png", "jpeg");
 						Bitmap bitmap = BitmapFactory
-								.decodeStream((InputStream) new URL(floormap)
+								.decodeStream((InputStream) new URL(floormapPng)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
-						bitmap.compress(CompressFormat.JPEG, 0, fos);
-						imagesize = bitmap.getByteCount();
+						bitmap.compress(CompressFormat.PNG, 0, fos);
 						fos.close();
 						bitmap.recycle();
 					} catch (IOException e) {
@@ -214,8 +229,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				{
 					Log.i(DEBUG_TAG, "file does exist");
 				}
-
-				try {
+                
+					try {
 					BitmapFactory.Options o1 = new BitmapFactory.Options();
 					o1.inSampleSize = scale;
 					Drawable d0 = BitmapDrawable.createFromResourceStream(
@@ -223,8 +238,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 							null, o1);
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
-					o.inSampleSize = scale;
-					
+					o.inSampleSize = scale;					
 					Bitmap bitmap = null;
 					String currentpoint = changeResolution(getURL(APname,
 							String.valueOf(accuracy), null));
@@ -233,9 +247,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
-
-					layers[0] = d0;
 					layers[1] = d;
+					layers[0] = d0;
 
 					ld = new LayerDrawable(layers);
 				} catch (MalformedURLException e) {
@@ -245,7 +258,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					e.printStackTrace();
 					return null;
 				}
-			} else if (Math.abs(accuracy - temp_accuracy) > 2) {
+			} else if ((Math.abs(accuracy - temp_accuracy) > 2) && !locationlocked) {
 				Log.v(DEBUG_TAG, "same ap, diff accuracy: "
 						+ (accuracy - temp_accuracy));
 				try {
@@ -268,7 +281,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
+				}
 			Log.v(DEBUG_TAG, "receive location service " + APname + " , "
 					+ accuracy + ", Thread id: " + Process.myTid());
 
@@ -303,8 +316,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					m.setRectToRect(drawableRect, viewRect,
 							Matrix.ScaleToFit.CENTER);
 					imageView.setImageMatrix(m);
-					Context context = getApplicationContext();
-					// int finalsize
+					//Context context = getApplicationContext();
+				/*	// int finalsize
 					int finalsize = imagesize / (scale * scale);
 					CharSequence text = "Resolution:" + height + "*" + width
 							+ "Scale:" + scale + " Size:" + finalsize / 1024
@@ -312,7 +325,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					int duration = Toast.LENGTH_SHORT;
 
 					Toast toast = Toast.makeText(context, text, duration);
-					toast.show();
+					toast.show();*/
 					scalemodified = false;
 				}
 			}
@@ -360,9 +373,28 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	public void locationChangeClick(View view)
+	{
+		if (locationLockCheckbox.isChecked())
+		{
+			locationlocked=true;
+			APname=buildingEditText.getText().toString()+"-"+floorEditText.getText().toString()+"-AP"+apEditText.getText().toString();
+		}
+		else 
+		{
+			locationlocked=false;
+		}
+	}
+	
 	public String changeResolution(String url) {
-		String result1 = url.replace("1790", width);
-		return result1.replace("1858", height);
+		
+		int division=4;
+		String[] urlpart1=url.split("&width=");
+		int width=Integer.parseInt(urlpart1[1].substring(0, 4));
+		int height=Integer.parseInt(urlpart1[1].substring(12,16));
+		String result=url.replace(Integer.toString(width), Integer.toString((width)/division));
+		
+		return result.replace(Integer.toString(height), Integer.toString((height)/division));
 
 	}
 
@@ -464,4 +496,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		double radians = Math.atan2(delta_y, delta_x);
 		return (float) Math.toDegrees(radians);
 	}
+	
+	
 }

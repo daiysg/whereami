@@ -8,5 +8,12 @@
     <string name="textviewLocation">My Location</string>
     <string name="textviewLocationTitle">Current Location:</string>
     <string name="tag">tag</string>
+    <color name="white">#FFFFFF</color>
+    <color name="texteditcolor">#F3FFF3</color>
+    <string name="buildingtag">Building</string>
+    <string name="floortag">floor</string>
+    <string name="leveltag">APname</string>
+    <string name="location">change</string>
+    <string name="locationLockCheckbox">lock</string>
     
 </resources>
