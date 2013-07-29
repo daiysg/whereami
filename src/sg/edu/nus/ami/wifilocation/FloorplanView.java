@@ -38,6 +38,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -88,10 +89,15 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private int scale = 1;
 	private boolean scalemodified = true;
 	private boolean locationlocked=false;
-	Bitmap bm_floorplan;
-	String APname;
-	double accuracy;
-	BroadcastReceiver locationReceiver;
+	
+	private EditText editText01;
+	private EditText editText02;
+	private EditText editText03;
+	private Button changeLocationButton;
+	
+	private String APname;
+	private double accuracy;
+	private BroadcastReceiver locationReceiver;
 
 	Drawable[] layers;
 	LayerDrawable ld;
@@ -112,9 +118,21 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
 		compassView = (ImageView) findViewById(R.id.compass);
+		editText01=(EditText) findViewById(R.id.EditText01);
+		editText02=(EditText) findViewById(R.id.EditText02);
+		editText03=(EditText) findViewById(R.id.EditText03);
+		changeLocationButton=(Button) findViewById(R.id.button1);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
 		compassView.setVisibility(View.GONE);
+		buildingEditText.setVisibility(View.GONE);
+		floorEditText.setVisibility(View.GONE);
+		apEditText.setVisibility(View.GONE);
+		locationLockCheckbox.setVisibility(View.GONE);
+		editText01.setVisibility(View.GONE);
+		editText02.setVisibility(View.GONE);
+		editText03.setVisibility(View.GONE);
+		changeLocationButton.setVisibility(View.GONE);
 		
 
 		layers = new Drawable[2];
@@ -300,6 +318,15 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
 				compassView.setVisibility(View.VISIBLE);
+				buildingEditText.setVisibility(View.VISIBLE);
+				floorEditText.setVisibility(View.VISIBLE);
+				apEditText.setVisibility(View.VISIBLE);
+				locationLockCheckbox.setVisibility(View.VISIBLE);
+				editText01.setVisibility(View.VISIBLE);
+				editText02.setVisibility(View.VISIBLE);
+				editText03.setVisibility(View.VISIBLE);
+				changeLocationButton.setVisibility(View.VISIBLE);
+				
 				imageView.setScaleType(ScaleType.MATRIX);
 				compassView.setScaleType(ScaleType.MATRIX);
 
@@ -388,7 +415,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	
 	public String changeResolution(String url) {
 		
-		int division=4;
+		int division=2;
 		String[] urlpart1=url.split("&width=");
 		int width=Integer.parseInt(urlpart1[1].substring(0, 4));
 		int height=Integer.parseInt(urlpart1[1].substring(12,16));
