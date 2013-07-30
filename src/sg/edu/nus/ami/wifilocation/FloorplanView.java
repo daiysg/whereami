@@ -283,10 +283,10 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
+					String currentpoint = changeResolution(getURL(APname,
+							String.valueOf(accuracy), null));
 					Bitmap bitmap = BitmapFactory.decodeStream(
-							(InputStream) new URL(getURL(APname,
-									String.valueOf(accuracy), null))
-									.getContent(), null, o);
+							(InputStream) new URL(currentpoint).getContent(), null, o);
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
 					layers[1] = d;
