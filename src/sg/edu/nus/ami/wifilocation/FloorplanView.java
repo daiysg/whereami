@@ -71,7 +71,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private static final int DRAG = 1;
 	private static final int ZOOM = 2;
 	private int mode = NONE;
-	// Remember some things for zooming
+
 	private PointF start = new PointF();
 	private PointF mid = new PointF();
 	private float oldDist = 1f;
@@ -231,7 +231,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 						file1.createNewFile();
 						String floormapPng = changeResolution(getURL(APname,
 								null, null));
-						//String floormap = floormapPng.replace("png", "jpeg");
+
 						Bitmap bitmap = BitmapFactory
 								.decodeStream((InputStream) new URL(floormapPng)
 										.getContent());
@@ -343,16 +343,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					m.setRectToRect(drawableRect, viewRect,
 							Matrix.ScaleToFit.CENTER);
 					imageView.setImageMatrix(m);
-					//Context context = getApplicationContext();
-				/*	// int finalsize
-					int finalsize = imagesize / (scale * scale);
-					CharSequence text = "Resolution:" + height + "*" + width
-							+ "Scale:" + scale + " Size:" + finalsize / 1024
-							+ "KB";
-					int duration = Toast.LENGTH_SHORT;
-
-					Toast toast = Toast.makeText(context, text, duration);
-					toast.show();*/
+				
 					scalemodified = false;
 				}
 			}
