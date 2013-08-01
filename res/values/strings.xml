@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, AndroidWifiLocationActivity!</string>
@@ -9,20 +8,12 @@
     <string name="textviewLocation">My Location</string>
     <string name="textviewLocationTitle">Current Location:</string>
     <string name="tag">tag</string>
+    <color name="white">#FFFFFF</color>
+    <color name="texteditcolor">#F3FFF3</color>
+    <string name="buildingtag">Building</string>
+    <string name="floortag">floor</string>
+    <string name="leveltag">APname</string>
+    <string name="location">change</string>
+    <string name="locationLockCheckbox">lock</string>
     
 </resources>
-=======
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="hello">Hello World, AndroidWifiLocationActivity!</string>
-    <string name="app_name">Where Am I</string>
-    <string name="buttonLocation">MyLocation</string>
-    <string name="buttonGoogleMap">Google Map</string>
-    <string name="buttonFloorplan">Floorplan</string>
-    <string name="textviewLocation">My Location</string>
-    <string name="textviewLocationTitle">Current Location:</string>
-    <string name="zoomin">+</string>
-    <string name="zoomout">-</string>
-    
-</resources>
->>>>>>> bdd973fdb4d6fbbf9246ab45b0a8a3c5bfc2b34c

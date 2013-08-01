@@ -3,18 +3,17 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
-
+    \
     <ImageView
         android:id="@+id/imageView_01"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:adjustViewBounds="true"
         android:scaleType="matrix"
         android:src="@drawable/icon" />
-
+    
     <ImageButton
         android:id="@+id/zoomout"
         android:layout_width="60dp"
@@ -43,4 +42,86 @@
         android:layout_below="@+id/zoomin"
         android:src="@drawable/compass" />
 
+    <EditText
+        android:id="@+id/buidlingname"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:background="@color/texteditcolor"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:ems="10" />
+
+    <EditText
+        android:id="@+id/apName"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:background="@color/texteditcolor" 
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/floorname"
+        android:ems="10" 
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/EditText01"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:layout_above="@+id/floorname"
+        android:layout_toLeftOf="@+id/buidlingname"
+        android:background="@android:color/transparent"
+        android:ems="10"
+        android:text="@string/buildingtag"
+        android:enabled="false" />
+
+    <EditText
+        android:id="@+id/floorname"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/buidlingname"
+        android:layout_toRightOf="@+id/EditText01"
+        android:background="@color/texteditcolor"
+        android:ems="10" />
+
+    <EditText
+        android:id="@+id/EditText02"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:layout_alignLeft="@+id/EditText03"
+        android:layout_below="@+id/EditText01"
+        android:layout_toLeftOf="@+id/button1"
+        android:background="@android:color/transparent"
+        android:ems="10"
+        android:enabled="false"
+        android:text="@string/floortag" />
+
+    <Button
+        android:id="@+id/button1"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/LocationLock1"
+        android:onClick="locationChangeClick"
+        android:text="@string/location" />
+
+    <EditText
+        android:id="@+id/EditText03"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/floorname"
+        android:layout_toLeftOf="@+id/button1"
+        android:background="@android:color/transparent"
+        android:ems="10"
+        android:enabled="false"
+        android:text="@string/leveltag" >
+    </EditText>
+
+    <CheckBox
+        android:id="@+id/LocationLock1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/apName"
+        android:background="@android:color/transparent" 
+        android:text="@string/locationLockCheckbox"/>
+    
 </RelativeLayout>

@@ -12,7 +12,8 @@ import sg.edu.nus.ami.wifilocation.api.APLocation;
 import sg.edu.nus.ami.wifilocation.api.RequestMethod;
 import sg.edu.nus.ami.wifilocation.api.RestClient;
 import sg.edu.nus.ami.wifilocation.api.ServiceLocation;
-import android.R.anim;
+import android.R.integer;
+import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -37,6 +38,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
@@ -50,7 +54,9 @@ import com.google.gson.GsonBuilder;
  * floor map where the person is based on the WiFi location input: wifi label in
  * term of I3-02-02 output: floorplan of I3-02
  * 
- * @author qinfeng
+ * Modified in Aug 1: User can input the APname he wants to type in. Output: floorplan and aplocation of the user input floor.
+ * 
+ * @author qinfeng, Dai Yuan
  * 
  */
 public class FloorplanView extends Activity implements OnTouchListener {
@@ -67,33 +73,57 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private static final int DRAG = 1;
 	private static final int ZOOM = 2;
 	private int mode = NONE;
-	// Remember some things for zooming
+
 	private PointF start = new PointF();
 	private PointF mid = new PointF();
 	private float oldDist = 1f;
 	private float d = 0f;
-	private float newRot = 0f;
 	private float[] floorLastEvent = null;
-	private float[] compassLastEvent = null;
-
+	
+	//Imageview: the imageview to display map
 	private ImageView imageView;
 	private Drawable floorplan;
 	private ImageButton zoominButton;
 	private ImageButton zoomoutButton;
 	private ImageView compassView;
-	int scale = 1;
-	CharSequence height = "1200";
-	CharSequence width = "1000";
-	int imagesize = 0;
-	boolean scalemodified = true;
-	Bitmap bm_floorplan;
-	String APname;
-	double accuracy;
-	BroadcastReceiver locationReceiver;
+	private CheckBox locationLockCheckbox;
+	private EditText buildingEditText;
+	private EditText floorEditText;
+	private EditText apEditText;
+	private int scale = 1;
+	private boolean scalemodified = true;
+	private boolean locationlocked=false;
+	
+	private EditText editText01;
+	private EditText editText02;
+	private EditText editText03;
+	private Button changeLocationButton;
+	
+	private String APname;
+	private double accuracy;
+	private BroadcastReceiver locationReceiver;
 
 	Drawable[] layers;
 	LayerDrawable ld;
 
+
+	/**
+	 * Set up the floorplan display activity 
+	 * 
+	 * @param imageView the main floorplan imageview
+	 * @param locationLockCheckbox checkbox checked when the location is set by user
+	 * @param buildingEditText edittext for user to type in the building name, like S16, BIZ2 etc.
+	 * @param floorEditText edittext for user to type in the floor no. : like 02, B1 etc.
+	 * @param apEditText edittext for user to type in the APName no
+	 * @param compassView the view of the compass
+	 * @param editText01 edittext of label "building", readonly
+	 * @param editText02 edittext of label "floor", readonly
+	 * @param editText03 edittext of label "APName", readonly
+	 * @param changeLocationButton Onclick for user to change another floorplan to display
+	 * @param zoominButton onclick for user to zoomin
+	 * @param zoomoutButton onclick for user to zoomout
+	 */
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -101,12 +131,31 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		setContentView(R.layout.floorplanview);
 		imageView = (ImageView) findViewById(R.id.imageView_01);
 		imageView.setBackgroundColor(Color.WHITE);
+		locationLockCheckbox= (CheckBox) findViewById(R.id.LocationLock1);
+		locationLockCheckbox.setChecked(false);
+		locationLockCheckbox.setTextColor(Color.BLACK);
+		buildingEditText=(EditText) findViewById(R.id.buidlingname);
+		floorEditText=(EditText) findViewById(R.id.floorname);
+		apEditText=(EditText)findViewById(R.id.apName);
 		zoominButton = (ImageButton) findViewById(R.id.zoomin);
 		zoomoutButton = (ImageButton) findViewById(R.id.zoomout);
 		compassView = (ImageView) findViewById(R.id.compass);
+		editText01=(EditText) findViewById(R.id.EditText01);
+		editText02=(EditText) findViewById(R.id.EditText02);
+		editText03=(EditText) findViewById(R.id.EditText03);
+		changeLocationButton=(Button) findViewById(R.id.button1);
 		zoominButton.setVisibility(View.GONE);
 		zoomoutButton.setVisibility(View.GONE);
 		compassView.setVisibility(View.GONE);
+		buildingEditText.setVisibility(View.GONE);
+		floorEditText.setVisibility(View.GONE);
+		apEditText.setVisibility(View.GONE);
+		locationLockCheckbox.setVisibility(View.GONE);
+		editText01.setVisibility(View.GONE);
+		editText02.setVisibility(View.GONE);
+		editText03.setVisibility(View.GONE);
+		changeLocationButton.setVisibility(View.GONE);
+		
 
 		layers = new Drawable[2];
 		ld = null;
@@ -139,9 +188,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 		compassView.setImageMatrix(compassMatrix);
 		imageView.setOnTouchListener(this);
-		// imageView.setOnTouchListener(new Touch());
-		// imageView.setScaleType(ScaleType.FIT_XY);
-
 	}
 
 	public void onResume() {
@@ -150,7 +196,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		filter.addAction(ServiceLocation.BROADCAST_ACTION);
 		registerReceiver(locationReceiver, filter);
 		Log.d(DEBUG_TAG, "onResume, register locationrecevier");
-
 	}
 
 	public void onPause() {
@@ -159,6 +204,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		Log.d(DEBUG_TAG, "onPause, unregister locationreceiver");
 	}
 
+	/**
+	 * convert an location to a URL can be used to download floorplan map
+	 * 
+	 * @param apname the apname that is calculated in NUS Geoloc.java; or the userinput in apEditText.
+	 * @param accuracy the accuracy that is calculated in Geoloc.java 
+	 * @param floorplan the floorplan that is calculated in NUS Geoloc.java, including building name and floor name; or the userinput in apEditText.
+	 * @return a URL string that can be used to find the floormap of such location. Ref in: http://wiki.nus.edu.sg/display/nllapi/GeoserverURLGettter
+	 */
 	public String getURL(String apname, String accuracy, String floorplan) {
 
 		try {
@@ -180,6 +233,13 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * background running, update the floormap.
+	 * @author qinfeng, Dai Yuan
+	 * @param locationlocked: a boolean var. true for used-defined location, false for test location
+	 * @param scalemodified: a boolean var. true for user-defined resolution
+	 * 
+	 */
 	private class UpdateFloorplanImageView extends
 			AsyncTask<APLocation, Void, LayerDrawable> {
 
@@ -192,11 +252,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			String temp_APname = apLocation.getAp_name();
 			double temp_accuracy = apLocation.getAccuracy();
 
-			if (scalemodified || APname == null || !temp_APname.equals(APname)) {
+			if (scalemodified || locationlocked || APname == null || !temp_APname.equals(APname)) {
 
-				APname = apLocation.getAp_name();
+				if (locationlocked==false)
+				{
+				   APname = apLocation.getAp_name();
+				}
 				File file1 = getApplicationContext().getFileStreamPath(
-						APname + ".jpg");
+						APname + ".png");
 				Log.d(DEBUG_TAG, file1.getAbsolutePath());
 				if (!file1.exists()) {
 					Log.i(DEBUG_TAG, "file does not exist");
@@ -205,13 +268,12 @@ public class FloorplanView extends Activity implements OnTouchListener {
 						file1.createNewFile();
 						String floormapPng = changeResolution(getURL(APname,
 								null, null));
-						String floormap = floormapPng.replace("png", "jpeg");
+
 						Bitmap bitmap = BitmapFactory
-								.decodeStream((InputStream) new URL(floormap)
+								.decodeStream((InputStream) new URL(floormapPng)
 										.getContent());
 						FileOutputStream fos = new FileOutputStream(file1);
-						bitmap.compress(CompressFormat.JPEG, 0, fos);
-						imagesize = bitmap.getByteCount();
+						bitmap.compress(CompressFormat.PNG, 0, fos);
 						fos.close();
 						bitmap.recycle();
 					} catch (IOException e) {
@@ -222,8 +284,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				{
 					Log.i(DEBUG_TAG, "file does exist");
 				}
-
-				try {
+                
+					try {
 					BitmapFactory.Options o1 = new BitmapFactory.Options();
 					o1.inSampleSize = scale;
 					Drawable d0 = BitmapDrawable.createFromResourceStream(
@@ -231,7 +293,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 							null, o1);
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
-					o.inSampleSize = scale;
+					o.inSampleSize = scale;					
 					Bitmap bitmap = null;
 					String currentpoint = changeResolution(getURL(APname,
 							String.valueOf(accuracy), null));
@@ -240,9 +302,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
-
-					layers[0] = d0;
 					layers[1] = d;
+					layers[0] = d0;
 
 					ld = new LayerDrawable(layers);
 				} catch (MalformedURLException e) {
@@ -252,20 +313,21 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					e.printStackTrace();
 					return null;
 				}
-			} else if (Math.abs(accuracy - temp_accuracy) > 2) {
+			} else if ((Math.abs(accuracy - temp_accuracy) > 2) && !locationlocked) {
 				Log.v(DEBUG_TAG, "same ap, diff accuracy: "
 						+ (accuracy - temp_accuracy));
 				try {
 					accuracy = temp_accuracy;
 					BitmapFactory.Options o = new BitmapFactory.Options();
 					o.inSampleSize = scale;
+					String currentpoint = changeResolution(getURL(APname,
+							String.valueOf(accuracy), null));
 					Bitmap bitmap = BitmapFactory.decodeStream(
-							(InputStream) new URL(getURL(APname,
-									String.valueOf(accuracy), null))
-									.getContent(), null, o);
+							(InputStream) new URL(currentpoint).getContent(), null, o);
 					BitmapDrawable d = new BitmapDrawable(getResources(),
 							bitmap);
 					layers[1] = d;
+				
 					ld = new LayerDrawable(layers);
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
@@ -274,7 +336,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			}
+				}
 			Log.v(DEBUG_TAG, "receive location service " + APname + " , "
 					+ accuracy + ", Thread id: " + Process.myTid());
 
@@ -288,17 +350,25 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			if (result == null) {
 				imageView.setImageDrawable(getResources().getDrawable(
 						R.drawable.nofloormap));
-				// imageView.setScaleType(ScaleType.FIT_XY);
 			} else {
 
+				//visible all views in floorplan
+				
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
 				compassView.setVisibility(View.VISIBLE);
+				buildingEditText.setVisibility(View.VISIBLE);
+				floorEditText.setVisibility(View.VISIBLE);
+				apEditText.setVisibility(View.VISIBLE);
+				locationLockCheckbox.setVisibility(View.VISIBLE);
+				editText01.setVisibility(View.VISIBLE);
+				editText02.setVisibility(View.VISIBLE);
+				editText03.setVisibility(View.VISIBLE);
+				changeLocationButton.setVisibility(View.VISIBLE);
+				
 				imageView.setScaleType(ScaleType.MATRIX);
 				compassView.setScaleType(ScaleType.MATRIX);
 
-				// Drawable drawable = imageView.getDrawable();
-				// Rect imageBounds = drawable.getBounds();
 				imageView.setImageDrawable(result);
 
 				if (scalemodified) {
@@ -312,16 +382,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 					m.setRectToRect(drawableRect, viewRect,
 							Matrix.ScaleToFit.CENTER);
 					imageView.setImageMatrix(m);
-					Context context = getApplicationContext();
-					// int finalsize
-					int finalsize = imagesize / (scale * scale);
-					CharSequence text = "Resolution:" + height + "*" + width
-							+ "Scale:" + scale + " Size:" + finalsize / 1024
-							+ "KB";
-					int duration = Toast.LENGTH_SHORT;
-
-					Toast toast = Toast.makeText(context, text, duration);
-					toast.show();
+				
 					scalemodified = false;
 				}
 			}
@@ -329,6 +390,11 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 	}
 
+	/**
+	 * the Onclick() function for zoominButton to click to zoomin resolution
+	 * @param scale the scale of the floorplan. larger scale, smaller resolution
+	 * @param scalemodified true if the scale is modified
+	 */
 	public void zoominClick(View view) {
 		if (scale > 1 && scale <= 16) {
 			scale /= 2;
@@ -339,7 +405,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			Toast toast = Toast.makeText(context, text, duration);
 			toast.show();
 			scalemodified = true;
-			// new UpdateFloorplanImageView().execute();
 		} else {
 			Context context = getApplicationContext();
 			CharSequence text = "You have reached the largest scale. Cannot zoom in!";
@@ -350,6 +415,11 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * the Onclick() function for zoomoutButton to click to zoomout resolution
+	 * @param scale the scale of the floorplan. larger scale, smaller resolution
+	 * @param scalemodified true if the scale is modified
+	 */
 	public void zoomoutClick(View view) {
 		if (scale >= 1 && scale < 16) {
 			scale *= 2;
@@ -360,7 +430,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			Toast toast = Toast.makeText(context, text, duration);
 			toast.show();
 			scalemodified = true;
-			// new UpdateFloorplanImageView().execute();
 		} else {
 			Context context = getApplicationContext();
 			CharSequence text = "You have reached the smallest scale. Cannot zoom out!";
@@ -371,17 +440,59 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * the Onclick() function for changing the floormap display to be the user-defined location
+	 * @param locationLocakCheckbox the checkbox in floorplanview
+	 * @param locationlocked true is the location is set by user
+	 */
+	public void locationChangeClick(View view)
+	{
+		if (locationLockCheckbox.isChecked())
+		{
+			locationlocked=true;
+			APname=buildingEditText.getText().toString()+"-"+floorEditText.getText().toString()+"-AP"+apEditText.getText().toString();
+		}
+		else 
+		{
+			locationlocked=false;
+		}
+	}
+	
+	/**
+	 * 
+	 * Function to change the resolution
+	 * @param url the url to display the floorplanview
+	 * @param division the division index to the original map. eg. division=2 means the displayed map is the original map scaled by 2*2
+	 * @return the modified url to display the floorplanview. The resolution is changed by the int var: division
+	 * 
+	 */
 	public String changeResolution(String url) {
-		String result1 = url.replace("1790", width);
-		return result1.replace("1858", height);
+		
+		int division=2;
+		String[] urlpart1=url.split("&width=");
+		int width=Integer.parseInt(urlpart1[1].substring(0, 4));
+		int height=Integer.parseInt(urlpart1[1].substring(12,16));
+		String result=url.replace(Integer.toString(width), Integer.toString((width)/division));
+		
+		return result.replace(Integer.toString(height), Integer.toString((height)/division));
 
 	}
 
+	/**
+	 * The touch event controller
+	 *
+	 *  @param savedFloorMatrix the original map matrix 
+	 *  @param savedCompassMatrix the original compass matrix
+	 *  @param mode the touch mode: 0 for none; 1 for drage 2 for zoom;
+	 *  @param floorLastEvent the last floor event 
+	 */
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		// TODO Auto-generated method stub
 		// Handle touch events
 
+		int value=event.getAction() & MotionEvent.ACTION_MASK;
+		Log.d("ontouch", Integer.toString(value));
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {
 		case MotionEvent.ACTION_DOWN:
 			savedFloorMatrix.set(floorMatrix);
@@ -389,7 +500,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			start.set(event.getX(), event.getY());
 			mode = DRAG;
 			floorLastEvent = null;
-			compassLastEvent = null;
 			break;
 		case MotionEvent.ACTION_POINTER_DOWN:
 			oldDist = spacing(event);
@@ -404,11 +514,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 			floorLastEvent[1] = event.getX(1);
 			floorLastEvent[2] = event.getY(0);
 			floorLastEvent[3] = event.getY(1);
-			compassLastEvent = new float[4];
-			compassLastEvent[0] = event.getX(0);
-			compassLastEvent[1] = event.getX(1);
-			compassLastEvent[2] = event.getY(0);
-			compassLastEvent[3] = event.getY(1);
 
 			d = rotation(event);
 			break;
@@ -416,7 +521,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		case MotionEvent.ACTION_POINTER_UP:
 			mode = NONE;
 			floorLastEvent = null;
-			compassLastEvent = null;
 			break;
 		case MotionEvent.ACTION_MOVE:
 			if (mode == DRAG) {
@@ -425,45 +529,50 @@ public class FloorplanView extends Activity implements OnTouchListener {
 				float dx = event.getX() - start.x;
 				float dy = event.getY() - start.y;
 				floorMatrix.postTranslate(dx, dy);
-			} else if (mode == ZOOM) {
+			} else if (mode == ZOOM) {				
 				float newDist = spacing(event);
 				if (newDist > 10f) {
 					floorMatrix.set(savedFloorMatrix);
+					compassMatrix.set(savedCompassMatrix);
 					float scale = newDist / oldDist;
 					floorMatrix.postScale(scale, scale, mid.x, mid.y);
 				}
 
-				if (floorLastEvent != null && compassLastEvent!=null) {					
-
-					newRot = rotation(event);
+				if (floorLastEvent != null) {	
+					float newRot = rotation(event);
 					float r = newRot - d;
-                    Log.d("rotation angle", Float.toString(r)); 
+					Log.d("rotationvalue","rotation value"+" "+Float.toString(r));
                     
 					floorMatrix.postRotate(r, imageView.getWidth() / 2,
-							imageView.getHeight() / 2);
+							imageView.getHeight() / 2);		
 					compassMatrix.postRotate(r, compassView.getWidth() / 2,
-								compassView.getHeight() / 2);		
-					r=0;
-				}
+								compassView.getHeight() / 2);				
+				}				
 			}
 			break;
 		}
 
-		compassView.setImageMatrix(compassMatrix);
-		Log.d("rotation angle", "compassmatrxi rotate");		
+		compassView.setImageMatrix(compassMatrix);			
+    
 		imageView.setImageMatrix(floorMatrix);
-		Log.d("rotation angle", "floormatrix rotate");		
 		return true; // indicate event was handled
 	}
 
-	/** Determine the space between the first two fingers */
+	/** Determine the space between the first two fingers
+	 * 
+	 *  @return the space between two fingers
+	 *  
+	 *  */
 	private float spacing(MotionEvent event) {
 		float x = event.getX(0) - event.getX(1);
 		float y = event.getY(0) - event.getY(1);
 		return FloatMath.sqrt(x * x + y * y);
 	}
 
-	/** Calculate the mid point of the first two fingers */
+	/** Calculate the mid point of the first two fingers
+	 * 
+	 *  
+	 *  */
 	private void midPoint(PointF point, MotionEvent event) {
 		float x = event.getX(0) + event.getX(1);
 		float y = event.getY(0) + event.getY(1);
@@ -474,7 +583,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	 * Calculate the degree to be rotated by.
 	 * 
 	 * @param event
-	 * @return Degrees
+	 * @return Degrees the rotated degrees compared to origin 
 	 */
 	private float rotation(MotionEvent event) {
 		double delta_x = (event.getX(0) - event.getX(1));
@@ -482,4 +591,6 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		double radians = Math.atan2(delta_y, delta_x);
 		return (float) Math.toDegrees(radians);
 	}
+	
+	
 }

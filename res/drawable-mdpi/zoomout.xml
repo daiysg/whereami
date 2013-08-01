@@ -7,4 +7,5 @@
   <item 
     android:state_pressed="true" 
     android:drawable="@drawable/map_zoom_out_p" /> 
+
 </selector> 
