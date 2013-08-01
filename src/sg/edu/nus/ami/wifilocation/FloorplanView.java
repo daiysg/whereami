@@ -54,7 +54,9 @@ import com.google.gson.GsonBuilder;
  * floor map where the person is based on the WiFi location input: wifi label in
  * term of I3-02-02 output: floorplan of I3-02
  * 
- * @author qinfeng
+ * Modified in Aug 1: User can input the APname he wants to type in. Output: floorplan and aplocation of the user input floor.
+ * 
+ * @author qinfeng, Dai Yuan
  * 
  */
 public class FloorplanView extends Activity implements OnTouchListener {
@@ -77,6 +79,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	private float oldDist = 1f;
 	private float d = 0f;
 	private float[] floorLastEvent = null;
+	
+	//Imageview: the imageview to display map
 	private ImageView imageView;
 	private Drawable floorplan;
 	private ImageButton zoominButton;
@@ -102,6 +106,24 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	Drawable[] layers;
 	LayerDrawable ld;
 
+
+	/**
+	 * Set up the floorplan display activity 
+	 * 
+	 * @param imageView the main floorplan imageview
+	 * @param locationLockCheckbox checkbox checked when the location is set by user
+	 * @param buildingEditText edittext for user to type in the building name, like S16, BIZ2 etc.
+	 * @param floorEditText edittext for user to type in the floor no. : like 02, B1 etc.
+	 * @param apEditText edittext for user to type in the APName no
+	 * @param compassView the view of the compass
+	 * @param editText01 edittext of label "building", readonly
+	 * @param editText02 edittext of label "floor", readonly
+	 * @param editText03 edittext of label "APName", readonly
+	 * @param changeLocationButton Onclick for user to change another floorplan to display
+	 * @param zoominButton onclick for user to zoomin
+	 * @param zoomoutButton onclick for user to zoomout
+	 */
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -182,6 +204,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		Log.d(DEBUG_TAG, "onPause, unregister locationreceiver");
 	}
 
+	/**
+	 * convert an location to a URL can be used to download floorplan map
+	 * 
+	 * @param apname the apname that is calculated in NUS Geoloc.java; or the userinput in apEditText.
+	 * @param accuracy the accuracy that is calculated in Geoloc.java 
+	 * @param floorplan the floorplan that is calculated in NUS Geoloc.java, including building name and floor name; or the userinput in apEditText.
+	 * @return a URL string that can be used to find the floormap of such location. Ref in: http://wiki.nus.edu.sg/display/nllapi/GeoserverURLGettter
+	 */
 	public String getURL(String apname, String accuracy, String floorplan) {
 
 		try {
@@ -203,6 +233,13 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * background running, update the floormap.
+	 * @author qinfeng, Dai Yuan
+	 * @param locationlocked: a boolean var. true for used-defined location, false for test location
+	 * @param scalemodified: a boolean var. true for user-defined resolution
+	 * 
+	 */
 	private class UpdateFloorplanImageView extends
 			AsyncTask<APLocation, Void, LayerDrawable> {
 
@@ -315,6 +352,8 @@ public class FloorplanView extends Activity implements OnTouchListener {
 						R.drawable.nofloormap));
 			} else {
 
+				//visible all views in floorplan
+				
 				zoominButton.setVisibility(View.VISIBLE);
 				zoomoutButton.setVisibility(View.VISIBLE);
 				compassView.setVisibility(View.VISIBLE);
@@ -351,6 +390,11 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 	}
 
+	/**
+	 * the Onclick() function for zoominButton to click to zoomin resolution
+	 * @param scale the scale of the floorplan. larger scale, smaller resolution
+	 * @param scalemodified true if the scale is modified
+	 */
 	public void zoominClick(View view) {
 		if (scale > 1 && scale <= 16) {
 			scale /= 2;
@@ -371,6 +415,11 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * the Onclick() function for zoomoutButton to click to zoomout resolution
+	 * @param scale the scale of the floorplan. larger scale, smaller resolution
+	 * @param scalemodified true if the scale is modified
+	 */
 	public void zoomoutClick(View view) {
 		if (scale >= 1 && scale < 16) {
 			scale *= 2;
@@ -391,6 +440,11 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 
+	/**
+	 * the Onclick() function for changing the floormap display to be the user-defined location
+	 * @param locationLocakCheckbox the checkbox in floorplanview
+	 * @param locationlocked true is the location is set by user
+	 */
 	public void locationChangeClick(View view)
 	{
 		if (locationLockCheckbox.isChecked())
@@ -404,6 +458,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		}
 	}
 	
+	/**
+	 * 
+	 * Function to change the resolution
+	 * @param url the url to display the floorplanview
+	 * @param division the division index to the original map. eg. division=2 means the displayed map is the original map scaled by 2*2
+	 * @return the modified url to display the floorplanview. The resolution is changed by the int var: division
+	 * 
+	 */
 	public String changeResolution(String url) {
 		
 		int division=2;
@@ -416,6 +478,14 @@ public class FloorplanView extends Activity implements OnTouchListener {
 
 	}
 
+	/**
+	 * The touch event controller
+	 *
+	 *  @param savedFloorMatrix the original map matrix 
+	 *  @param savedCompassMatrix the original compass matrix
+	 *  @param mode the touch mode: 0 for none; 1 for drage 2 for zoom;
+	 *  @param floorLastEvent the last floor event 
+	 */
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		// TODO Auto-generated method stub
@@ -488,14 +558,21 @@ public class FloorplanView extends Activity implements OnTouchListener {
 		return true; // indicate event was handled
 	}
 
-	/** Determine the space between the first two fingers */
+	/** Determine the space between the first two fingers
+	 * 
+	 *  @return the space between two fingers
+	 *  
+	 *  */
 	private float spacing(MotionEvent event) {
 		float x = event.getX(0) - event.getX(1);
 		float y = event.getY(0) - event.getY(1);
 		return FloatMath.sqrt(x * x + y * y);
 	}
 
-	/** Calculate the mid point of the first two fingers */
+	/** Calculate the mid point of the first two fingers
+	 * 
+	 *  
+	 *  */
 	private void midPoint(PointF point, MotionEvent event) {
 		float x = event.getX(0) + event.getX(1);
 		float y = event.getY(0) + event.getY(1);
@@ -506,7 +583,7 @@ public class FloorplanView extends Activity implements OnTouchListener {
 	 * Calculate the degree to be rotated by.
 	 * 
 	 * @param event
-	 * @return Degrees
+	 * @return Degrees the rotated degrees compared to origin 
 	 */
 	private float rotation(MotionEvent event) {
 		double delta_x = (event.getX(0) - event.getX(1));
